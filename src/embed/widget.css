@@ -685,12 +685,35 @@
   height: 1rem;
   flex-shrink: 0;
   fill: var(--na-btn-primary-bg);
-  transition: transform var(--na-transition-fast);
+  transition: fill 0.16s ease;
   transform: rotate(0deg);
+  transform-origin: center;
 }
 
-.na-dev-widget:not(.na-dev-widget--collapsed) .na-dev-widget__chevron {
-  transform: rotate(180deg);
+.na-dev-widget--collapsed > .na-dev-widget__header .na-dev-widget__chevron {
+  animation: na-dev-widget-chevron-collapse 0.16s ease both;
+}
+
+.na-dev-widget:not(.na-dev-widget--collapsed) > .na-dev-widget__header .na-dev-widget__chevron {
+  animation: na-dev-widget-chevron-expand 0.16s ease both;
+}
+
+@keyframes na-dev-widget-chevron-collapse {
+  from {
+    transform: rotate(180deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes na-dev-widget-chevron-expand {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(180deg);
+  }
 }
 
 .na-dev-widget__body {
@@ -926,10 +949,19 @@
 
 .na-network-activity__toolbar {
   display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   justify-content: flex-start;
 }
 
-.na-network-activity__clear {
+.na-network-activity .na-dev-widget__body {
+  max-height: min(42rem, 70vh);
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.na-network-activity__clear,
+.na-network-activity__sort {
   padding: 0.25rem 0.625rem;
   border: 1px solid var(--na-btn-secondary-border);
   border-radius: 0.375rem;
@@ -941,13 +973,14 @@
   cursor: pointer;
 }
 
-.na-network-activity__clear:hover {
+.na-network-activity__clear:hover,
+.na-network-activity__sort:hover {
   background: var(--na-btn-secondary-hover);
 }
 
 .na-network-console {
   margin: 0;
-  padding: 0.875rem;
+  padding: 0.5rem 0.625rem;
   border-radius: calc(var(--na-widget-radius) * 0.75);
   background: #0f172a;
   color: #e2e8f0;
@@ -965,12 +998,63 @@
 }
 
 .na-network-console__exchange {
-  padding: 0.75rem 0;
+  padding: 0.45rem 0;
   border-bottom: 1px solid rgb(148 163 184 / 0.2);
 }
 
 .na-network-console__exchange:last-child {
   border-bottom: none;
+}
+
+.na-network-console__exchange--summary {
+  margin-bottom: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid rgb(148 163 184 / 0.18);
+  border-radius: 0.5rem;
+  background: rgb(15 23 42 / 0.52);
+}
+
+.na-network-console__exchange--summary:last-child {
+  margin-bottom: 0;
+  border-bottom: 1px solid rgb(148 163 184 / 0.18);
+}
+
+.na-network-console__exchange--summary .na-network-console__exchange-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0;
+  padding: 0.125rem 0.125rem 0;
+  cursor: pointer;
+  list-style: none;
+}
+
+.na-network-console__summary-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.na-network-console__summary-details[open] > .na-network-console__exchange-head {
+  margin-bottom: 0.75rem;
+}
+
+.na-network-console__summary-chevron {
+  flex: 0 0 auto;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-top: 0.35rem;
+  color: #94a3b8;
+  transform: rotate(0deg);
+  transform-origin: center;
+  transition: transform 0.16s ease, color 0.16s ease;
+}
+
+.na-network-console__summary-details[open] > .na-network-console__exchange-head .na-network-console__summary-chevron {
+  transform: rotate(180deg);
+}
+
+.na-network-console__exchange--summary .na-network-console__exchange-head:hover .na-network-console__summary-chevron {
+  color: #e2e8f0;
 }
 
 .na-network-console__exchange--nested {
@@ -980,19 +1064,67 @@
 }
 
 .na-network-console__exchange-head {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.35rem;
 }
 
 .na-network-console__meta {
   display: flex;
+  flex: 1 1 auto;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.35rem 0.75rem;
+  gap: 0.25rem 0.5rem;
 }
 
 .na-network-console__label {
   color: #38bdf8;
   font-weight: 700;
+}
+
+.na-network-console__method {
+  border-radius: 999px;
+  padding: 0 0.35rem;
+  font-weight: 700;
+}
+
+.na-network-console__method--get {
+  color: #dbeafe;
+  background: rgb(37 99 235 / 0.32);
+}
+
+.na-network-console__method--post {
+  color: #dcfce7;
+  background: rgb(22 163 74 / 0.32);
+}
+
+.na-network-console__method--put {
+  color: #fef3c7;
+  background: rgb(217 119 6 / 0.34);
+}
+
+.na-network-console__method--patch {
+  color: #f3e8ff;
+  background: rgb(147 51 234 / 0.34);
+}
+
+.na-network-console__method--delete {
+  color: #fee2e2;
+  background: rgb(220 38 38 / 0.34);
+}
+
+.na-network-console__method--head,
+.na-network-console__method--options {
+  color: #ccfbf1;
+  background: rgb(13 148 136 / 0.32);
+}
+
+.na-network-console__method--other {
+  color: #e2e8f0;
+  background: rgb(100 116 139 / 0.34);
+}
+
+.na-network-console__endpoint {
+  color: #f8fafc;
+  word-break: break-all;
 }
 
 .na-network-console__verb {
@@ -1016,8 +1148,52 @@
   color: #f87171;
 }
 
+.na-network-console__timestamp {
+  color: #94a3b8;
+}
+
 .na-network-console__timing {
   color: #94a3b8;
+}
+
+.na-network-console__details,
+.na-network-console-modal__close {
+  flex: 0 0 auto;
+  padding: 0.125rem 0.5rem;
+  border: 1px solid rgb(148 163 184 / 0.45);
+  border-radius: 0.375rem;
+  background: rgb(30 41 59 / 0.85);
+  color: #f8fafc;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.na-network-console__exchange--summary .na-network-console__details {
+  display: none;
+}
+
+.na-network-console__summary-details[open] > .na-network-console__exchange-head .na-network-console__details {
+  display: inline-flex;
+}
+
+.na-network-console__details:hover,
+.na-network-console-modal__close:hover {
+  background: rgb(51 65 85 / 0.95);
+}
+
+.na-network-console__summary-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.na-network-console__exchange--summary .na-network-console__block {
+  padding: 0.5rem;
+  border: 1px solid rgb(148 163 184 / 0.12);
+  border-radius: 0.4375rem;
+  background: rgb(2 6 23 / 0.28);
 }
 
 .na-network-console__exchange-body {
@@ -1034,7 +1210,7 @@
 }
 
 .na-network-console__block-title {
-  margin: 0 0 0.25rem;
+  margin: 0 0 0.15rem;
   color: #94a3b8;
   font-size: 0.6875rem;
   font-weight: 700;
@@ -1044,11 +1220,11 @@
 
 .na-network-console__pre {
   margin: 0;
-  padding: 0.5rem 0.625rem;
+  padding: 0.375rem 0.5rem;
   border-radius: 0.375rem;
   background: rgb(15 23 42 / 0.65);
-  white-space: pre-wrap;
-  word-break: break-word;
+  white-space: pre;
+  word-break: normal;
   overflow-x: auto;
 }
 
@@ -1062,4 +1238,103 @@
 
 .na-network-console__pre--error {
   color: #fecaca;
+}
+
+.na-network-console__tree {
+  overflow-x: auto;
+  color: #bbf7d0;
+}
+
+.na-network-console__tree-table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.na-network-console__tree-key,
+.na-network-console__tree-value,
+.na-network-console__tree-empty {
+  padding: 0.125rem 0.25rem;
+  border-top: 1px solid rgb(148 163 184 / 0.12);
+  vertical-align: top;
+}
+
+.na-network-console__tree-key {
+  color: #93c5fd;
+  font-weight: 700;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.na-network-console__tree-value {
+  color: #bbf7d0;
+  white-space: nowrap;
+}
+
+.na-network-console__tree-empty,
+.na-network-console__tree-primitive {
+  color: #cbd5e1;
+}
+
+.na-network-console__tree-details {
+  margin: 0;
+}
+
+.na-network-console__tree-summary {
+  color: #fef08a;
+  cursor: pointer;
+  user-select: none;
+}
+
+.na-network-console__tree-details .na-network-console__tree-table {
+  margin-top: 0.125rem;
+  margin-left: 0.5rem;
+  min-width: calc(100% - 0.5rem);
+}
+
+.na-network-console-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgb(15 23 42 / 0.72);
+}
+
+.na-network-console-modal__dialog {
+  width: min(56rem, 100%);
+  max-height: min(42rem, calc(100vh - 2rem));
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--na-widget-radius);
+  background: #020617;
+  box-shadow: 0 1.5rem 4rem rgb(15 23 42 / 0.45);
+  overflow: hidden;
+}
+
+.na-network-console-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid rgb(148 163 184 / 0.2);
+}
+
+.na-network-console-modal__title {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-family: var(--na-font-family-mono);
+  font-size: 0.75rem;
+}
+
+.na-network-console--modal {
+  border-radius: 0;
+  max-height: none;
+  flex: 1 1 auto;
 }

@@ -1,6 +1,7 @@
 import { injectWidgetStyles } from "./widget-styles.js";
 import { NetworkActivityLog } from "./network-activity.js";
 import { renderNetworkActivityWidget } from "./network-activity-widget-render.js";
+import type { NetworkActivitySortDirection } from "./network-activity-widget-render.js";
 
 export type NextAddressNetworkActivityWidgetOptions = {
   mount: HTMLElement | string;
@@ -48,6 +49,8 @@ export function createNextAddressNetworkActivityWidget(
   const container = resolveMount(options.mount);
   container.classList.add("na-widget-host", "na-network-activity-host");
   let expanded = options.defaultExpanded ?? false;
+  let sortDirection: NetworkActivitySortDirection = "newest";
+  let selectedExchangeId: string | undefined;
 
   function paint(): void {
     let exchanges = log.getExchanges();
@@ -57,11 +60,28 @@ export function createNextAddressNetworkActivityWidget(
     renderNetworkActivityWidget(container, {
       exchanges,
       expanded,
+      sortDirection,
+      selectedExchangeId,
       onToggleExpanded: () => {
         expanded = !expanded;
         paint();
       },
-      onClear: () => log.clear(),
+      onToggleSortDirection: () => {
+        sortDirection = sortDirection === "newest" ? "oldest" : "newest";
+        paint();
+      },
+      onClear: () => {
+        selectedExchangeId = undefined;
+        log.clear();
+      },
+      onOpenDetails: (exchangeId) => {
+        selectedExchangeId = exchangeId;
+        paint();
+      },
+      onCloseDetails: () => {
+        selectedExchangeId = undefined;
+        paint();
+      },
     });
   }
 
