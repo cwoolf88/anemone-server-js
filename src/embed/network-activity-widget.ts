@@ -31,6 +31,22 @@ function resolveMount(mount: HTMLElement | string): HTMLElement {
   return el;
 }
 
+function countExchanges(exchanges: ReturnType<NetworkActivityLog["getExchanges"]>): number {
+  return exchanges.reduce(
+    (count, exchange) => count + 1 + countExchanges(exchange.children ?? []),
+    0,
+  );
+}
+
+function scrollNetworkActivityToBottom(container: HTMLElement): void {
+  const scrollTargets = container.querySelectorAll<HTMLElement>(
+    ".na-network-activity .na-dev-widget__body, .na-network-console",
+  );
+  for (const target of scrollTargets) {
+    target.scrollTop = target.scrollHeight;
+  }
+}
+
 /**
  * Dev console for viewing grouped integration HTTP exchanges (request + response JSON).
  */
@@ -49,14 +65,24 @@ export function createNextAddressNetworkActivityWidget(
   const container = resolveMount(options.mount);
   container.classList.add("na-widget-host", "na-network-activity-host");
   let expanded = options.defaultExpanded ?? false;
-  let sortDirection: NetworkActivitySortDirection = "newest";
+  let sortDirection: NetworkActivitySortDirection = "oldest";
   let selectedExchangeId: string | undefined;
+  let previousRequestCount: number | undefined;
 
   function paint(): void {
+    const hadOpenRequest = container.querySelector(".na-network-console__summary-details[open]") != null;
     let exchanges = log.getExchanges();
     if (options.maxEntries != null && options.maxEntries > 0) {
       exchanges = exchanges.slice(0, options.maxEntries);
     }
+    const requestCount = countExchanges(exchanges);
+    const shouldScrollToBottom =
+      expanded &&
+      sortDirection === "oldest" &&
+      previousRequestCount != null &&
+      requestCount > previousRequestCount &&
+      !hadOpenRequest;
+
     renderNetworkActivityWidget(container, {
       exchanges,
       expanded,
@@ -83,6 +109,10 @@ export function createNextAddressNetworkActivityWidget(
         paint();
       },
     });
+    if (shouldScrollToBottom) {
+      scrollNetworkActivityToBottom(container);
+    }
+    previousRequestCount = requestCount;
   }
 
   const unsubscribe = log.subscribe(paint);

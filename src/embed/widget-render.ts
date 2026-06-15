@@ -335,6 +335,9 @@ export function renderConnectionSection(
       : "Signed in";
     header.appendChild(signInBadge);
   }
+  if (view.autoConnected) {
+    header.appendChild(el("span", "na-widget__badge na-widget__badge--auto", "Auto-connected"));
+  }
 
   section.appendChild(header);
 
@@ -345,7 +348,13 @@ export function renderConnectionSection(
   const footer = el("div", "na-widget__footer");
   const actionsRow = el("div", "na-widget__actions");
 
-  if (view.connected) {
+  if (view.connected && !view.signedIntoPrimary) {
+    const btn = el("button", "na-widget__btn na-widget__btn--primary", "Sign in");
+    btn.type = "button";
+    btn.disabled = !info.connectSignInUrl || view.statusLoading;
+    btn.addEventListener("click", actions.onConnectAccount);
+    actionsRow.appendChild(btn);
+  } else if (view.connected) {
     const btn = el("button", "na-widget__btn na-widget__btn--secondary", "Disconnect account");
     btn.type = "button";
     btn.disabled = !info.disconnectUrl || (!view.signedIntoPrimary && !info.disconnectSignInUrl);

@@ -5,6 +5,9 @@ export const DEFAULT_PRIMARY_SETTINGS_PATH = "/addresses";
 
 export function connectionSubtitle(view: WidgetConnectionView, tenantName: string): string {
   const app = tenantName || "your app";
+  if (view.autoConnected && !view.signedIntoPrimary) {
+    return `${app} matched your NextAddress account by verified email. Sign in to manage your shared profile.`;
+  }
   if (view.connected) {
     return `Contact updates from ${app} sync through your shared NextAddress profile.`;
   }
@@ -22,6 +25,9 @@ export function connectionStatusTooltip(
     return "Checking connection status with NextAddress…";
   }
   if (view.connected) {
+    if (view.autoConnected && !view.signedIntoPrimary) {
+      return "Auto-connected by verified email. Sign in to manage your NextAddress profile.";
+    }
     return mockMode
       ? "Connected (mock). Changes you save sync to your NextAddress profile."
       : "Connected. Changes you save in this app sync to your NextAddress profile.";

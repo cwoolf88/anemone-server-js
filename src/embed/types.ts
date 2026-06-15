@@ -29,6 +29,10 @@ export type TenantConnectionInfo = {
   disconnectUrl: string | null;
   connectSignInUrl: string | null;
   disconnectSignInUrl: string | null;
+  /** Tenant-side metadata: this external user already has a link in NextAddress. */
+  connected?: boolean;
+  /** True when the tenant created the link through email auto-connect. */
+  autoConnected?: boolean;
   mockMode: boolean;
 };
 
@@ -37,6 +41,7 @@ export type WidgetConnectionView = {
   error: string | null;
   info: TenantConnectionInfo | null;
   connected: boolean;
+  autoConnected: boolean;
   signedIntoPrimary: boolean;
   primaryEmail: string | null;
   /**

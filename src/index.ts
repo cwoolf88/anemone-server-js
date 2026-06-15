@@ -4,6 +4,8 @@ export type {
   AddressUpdateFailureSource,
   AddressPayload,
   AnyVerifiedWebhookPayload,
+  AutoConnectMatchRequestEvent,
+  AutoConnectMatchResponseBody,
   ContactChangeKind,
   ContactChangeWebhookEvent,
   ContactUpdateProcessingStatus,
@@ -25,6 +27,9 @@ export type {
   ArmIntegrationSimulationRequest,
   ArmIntegrationSimulationResponse,
   IntegrationSimulationScenario,
+  TenantAutoConnectRequest,
+  TenantAutoConnectResponseBody,
+  TenantAutoConnectStatus,
   TenantConnectRequest,
   TenantConnectionResponseBody,
   TenantConnectionStatus,
@@ -37,6 +42,11 @@ export {
   NextAddressError,
   WebhookVerificationError,
 } from "./errors.js";
+export {
+  AUTO_CONNECT_MATCH_PATH,
+  handleAutoConnectMatchRequest,
+  type AutoConnectMatchHandlerOptions,
+} from "./auto-connect.js";
 export {
   decodeExternalUserId,
   encodeExternalUserId,

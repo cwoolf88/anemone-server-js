@@ -53,11 +53,16 @@ function initialConnectionView(): WidgetConnectionView {
     error: null,
     info: null,
     connected: false,
+    autoConnected: false,
     signedIntoPrimary: false,
     primaryEmail: null,
     merchantSettingsPath: null,
     statusLoading: false,
   };
+}
+
+function metadataConnected(connection: TenantConnectionInfo | null): boolean {
+  return connection?.connected === true || connection?.autoConnected === true;
 }
 
 export function canConnectAccount(view: WidgetConnectionView): boolean {
@@ -147,7 +152,8 @@ export function createNextAddressIntegration(
     if (connection.mockMode || !connection.primaryBaseUrl) {
       connectionView = {
         ...connectionView,
-        connected: false,
+        connected: metadataConnected(connection),
+        autoConnected: connection.autoConnected === true,
         signedIntoPrimary: connection.mockMode,
         primaryEmail: null,
         merchantSettingsPath: null,
@@ -166,7 +172,8 @@ export function createNextAddressIntegration(
       );
       connectionView = {
         ...connectionView,
-        connected: status.connected,
+        connected: status.connected || metadataConnected(connection),
+        autoConnected: connection.autoConnected === true,
         signedIntoPrimary: status.signedIn,
         primaryEmail: status.email,
         merchantSettingsPath: status.merchantSettingsPath,
@@ -188,7 +195,8 @@ export function createNextAddressIntegration(
         loading: false,
         error: null,
         info,
-        connected: connectionView.connected,
+        connected: connectionView.connected || metadataConnected(info),
+        autoConnected: info.autoConnected === true,
         signedIntoPrimary: connectionView.signedIntoPrimary,
         primaryEmail: connectionView.primaryEmail,
         merchantSettingsPath: connectionView.merchantSettingsPath,
@@ -202,6 +210,7 @@ export function createNextAddressIntegration(
         error: e instanceof Error ? e.message : "Could not load NextAddress connection info.",
         info: null,
         connected: false,
+        autoConnected: false,
         signedIntoPrimary: false,
         primaryEmail: null,
         merchantSettingsPath: null,
@@ -219,9 +228,11 @@ export function createNextAddressIntegration(
   }
 
   function applySessionStatus(session: PrimarySession): void {
+    const info = connectionView.info;
     connectionView = {
       ...connectionView,
-      connected: session.connected,
+      connected: session.connected || metadataConnected(info),
+      autoConnected: info?.autoConnected === true,
       signedIntoPrimary: session.signedIn,
       primaryEmail: session.email,
       merchantSettingsPath: session.merchantSettingsPath,

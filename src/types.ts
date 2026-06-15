@@ -25,8 +25,11 @@ export interface AddressPayload {
   label?: string;
 }
 
-/** Webhook event envelope from next-address-primary → 3rd party. */
-export type OutboundWebhookEvent = ContactChangeWebhookEvent | ContactUpdateReviewedEvent;
+/** Webhook/request envelope from next-address-primary → 3rd party. */
+export type OutboundWebhookEvent =
+  | ContactChangeWebhookEvent
+  | ContactUpdateReviewedEvent
+  | AutoConnectMatchRequestEvent;
 
 export interface ContactChangeWebhookEvent {
   /** Event name for routing/versioning */
@@ -68,6 +71,21 @@ export interface ContactUpdateReviewedEvent {
   lastName?: string;
 }
 
+export interface AutoConnectMatchRequestEvent {
+  event: "account.email_match.requested";
+  occurredAt: string;
+  /** Verified NextAddress email. Use only to check for an existing tenant account. */
+  email: string;
+  /** Primary-generated audit/correlation id for this one lookup. */
+  correlationId: string;
+}
+
+export interface AutoConnectMatchResponseBody {
+  matched: boolean;
+  /** Required when matched is true. Tenant-side stable user identifier to link. */
+  externalUserId?: ExternalUserId;
+}
+
 /** Result of verifying a raw `contact.changed` body */
 export type VerifiedWebhookPayload = ContactChangeWebhookEvent;
 
@@ -79,6 +97,12 @@ export interface ContactUpdateRequest {
   externalUserId: ExternalUserId;
   kind: ContactChangeKind;
   address?: AddressPayload;
+  /**
+   * Optional previous address from the tenant system. Primary can use this to
+   * fuzzy-match which saved NextAddress address should be updated; it does not
+   * replace `address`, which remains the requested new value/patch.
+   */
+  previousAddress?: AddressPayload;
   email?: string;
   phone?: string;
   firstName?: string;
@@ -123,6 +147,26 @@ export type TenantConnectionStatus = "connected" | "disconnected";
 
 export interface TenantConnectionResponseBody {
   status: TenantConnectionStatus;
+  message?: string;
+  correlationId?: string;
+}
+
+export interface TenantAutoConnectRequest {
+  /** Verified email from the tenant-side account currently signed into your app. */
+  email: string;
+  /** Tenant-side stable user identifier to link when the email matches exactly one NextAddress user. */
+  externalUserId: ExternalUserId;
+}
+
+export type TenantAutoConnectStatus = "connected" | "not_found" | "disabled";
+
+export interface TenantAutoConnectResponseBody {
+  status: TenantAutoConnectStatus;
+  matched: boolean;
+  connected: boolean;
+  autoConnected: boolean;
+  externalUserId?: ExternalUserId;
+  created?: boolean;
   message?: string;
   correlationId?: string;
 }

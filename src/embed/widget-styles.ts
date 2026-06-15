@@ -221,6 +221,10 @@ export const WIDGET_CSS = `
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.na-widget__badge--auto {
+  background: var(--na-badge-success-bg);
+  color: var(--na-badge-success-text);
+}
 .na-widget__footer {
   display: flex;
   align-items: center;

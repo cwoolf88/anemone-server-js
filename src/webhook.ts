@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { WebhookVerificationError } from "./errors.js";
 import type {
   AnyVerifiedWebhookPayload,
+  AutoConnectMatchRequestEvent,
   ContactChangeWebhookEvent,
   ContactUpdateReviewedEvent,
   OutboundWebhookEvent,
@@ -148,6 +149,24 @@ export function parseWebhookEvent(json: string): OutboundWebhookEvent {
       phone: typeof data.phone === "string" ? data.phone : undefined,
       firstName: typeof data.firstName === "string" ? data.firstName : undefined,
       lastName: typeof data.lastName === "string" ? data.lastName : undefined,
+    };
+    return out;
+  }
+  if (event === "account.email_match.requested") {
+    if (typeof data.occurredAt !== "string") {
+      throw new WebhookVerificationError("Missing occurredAt");
+    }
+    if (typeof data.email !== "string" || data.email.length === 0) {
+      throw new WebhookVerificationError("Missing email");
+    }
+    if (typeof data.correlationId !== "string" || data.correlationId.length === 0) {
+      throw new WebhookVerificationError("Missing correlationId");
+    }
+    const out: AutoConnectMatchRequestEvent = {
+      event: "account.email_match.requested",
+      occurredAt: data.occurredAt,
+      email: data.email,
+      correlationId: data.correlationId,
     };
     return out;
   }

@@ -15,6 +15,8 @@ import type {
   SimulateFailedAddressUpdateRequest,
   SimulateFailedAddressUpdateResponse,
   TenantConnectRequest,
+  TenantAutoConnectRequest,
+  TenantAutoConnectResponseBody,
   TenantConnectionResponseBody,
   TenantDisconnectRequest,
 } from "./types.js";
@@ -162,6 +164,35 @@ export class NextAddressClient {
       correlationId:
         typeof parsed.correlationId === "string" ? parsed.correlationId : undefined,
     }));
+  }
+
+  /**
+   * Auto-connect one tenant-side account to a NextAddress account by verified email.
+   * This performs a single tenant-authenticated membership check and never requires
+   * exporting tenant email lists to primary.
+   */
+  async autoConnectTenantAccount(
+    body: TenantAutoConnectRequest,
+    init?: { idempotencyKey?: string; path?: string },
+  ): Promise<TenantAutoConnectResponseBody> {
+    return this.requestJson(
+      "POST",
+      init?.path ?? "/api/v1/tenants/auto-connect",
+      body,
+      init,
+      (parsed) => ({
+        status: parsed.status as TenantAutoConnectResponseBody["status"],
+        matched: parsed.matched === true,
+        connected: parsed.connected === true,
+        autoConnected: parsed.autoConnected === true,
+        externalUserId:
+          typeof parsed.externalUserId === "string" ? parsed.externalUserId : undefined,
+        created: typeof parsed.created === "boolean" ? parsed.created : undefined,
+        message: typeof parsed.message === "string" ? parsed.message : undefined,
+        correlationId:
+          typeof parsed.correlationId === "string" ? parsed.correlationId : undefined,
+      }),
+    );
   }
 
   /**
