@@ -21,8 +21,8 @@ function resolveMount(mount: HTMLElement | string): HTMLElement {
 }
 
 /**
- * Packaged NextAddress account widget plus an optional sync status strip.
- * For custom UIs, use {@link createNextAddressIntegration} instead.
+ * Packaged NextAddress account widget with optional in-widget contact sync status.
+ * For custom UIs, use {@link createNextAddressIntegration} with {@link renderSyncBlock}.
  */
 export function createNextAddressWidget(
   options: NextAddressWidgetOptions

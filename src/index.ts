@@ -19,6 +19,8 @@ export type {
   OutboundWebhookEvent,
   MintDirectConnectTokenRequest,
   MintDirectConnectTokenResponseBody,
+  MarkTenantExternalUserDeletedRequest,
+  MarkTenantExternalUserDeletedResponseBody,
   SimulateAddressChangeSecurityEventRequest,
   SimulateAddressChangeSecurityEventResponse,
   SimulateAddressChangeSecurityEventStatus,

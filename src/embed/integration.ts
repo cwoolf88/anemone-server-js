@@ -19,6 +19,7 @@ import {
 } from "./primary-bridge.js";
 import {
   invalidatePrimarySessionCache,
+  primarySessionMatchesTenant,
   probePrimaryClerkSession,
   type PrimarySession,
 } from "./primary-session.js";
@@ -63,6 +64,39 @@ function initialConnectionView(): WidgetConnectionView {
 
 function metadataConnected(connection: TenantConnectionInfo | null): boolean {
   return connection?.connected === true || connection?.autoConnected === true;
+}
+
+function resolvePrimarySessionView(
+  session: PrimarySession,
+  connection: TenantConnectionInfo | null,
+): Pick<
+  WidgetConnectionView,
+  "signedIntoPrimary" | "primaryEmail" | "connected" | "merchantSettingsPath"
+> {
+  const matches = connection
+    ? primarySessionMatchesTenant(session, connection.tenantUserEmail)
+    : session.signedIn;
+  if (!matches) {
+    return {
+      signedIntoPrimary: false,
+      primaryEmail: null,
+      connected: metadataConnected(connection),
+      merchantSettingsPath: null,
+    };
+  }
+  return {
+    signedIntoPrimary: session.signedIn,
+    primaryEmail: session.email,
+    connected: session.connected || metadataConnected(connection),
+    merchantSettingsPath: session.merchantSettingsPath,
+  };
+}
+
+function sessionMatchesTenant(
+  session: PrimarySession,
+  connection: TenantConnectionInfo,
+): boolean {
+  return primarySessionMatchesTenant(session, connection.tenantUserEmail);
 }
 
 export function canConnectAccount(view: WidgetConnectionView): boolean {
@@ -172,11 +206,8 @@ export function createNextAddressIntegration(
       );
       connectionView = {
         ...connectionView,
-        connected: status.connected || metadataConnected(connection),
         autoConnected: connection.autoConnected === true,
-        signedIntoPrimary: status.signedIn,
-        primaryEmail: status.email,
-        merchantSettingsPath: status.merchantSettingsPath,
+        ...resolvePrimarySessionView(status, connection),
         statusLoading: false,
       };
     } finally {
@@ -231,11 +262,8 @@ export function createNextAddressIntegration(
     const info = connectionView.info;
     connectionView = {
       ...connectionView,
-      connected: session.connected || metadataConnected(info),
       autoConnected: info?.autoConnected === true,
-      signedIntoPrimary: session.signedIn,
-      primaryEmail: session.email,
-      merchantSettingsPath: session.merchantSettingsPath,
+      ...resolvePrimarySessionView(session, info),
     };
     notify();
   }
@@ -294,7 +322,7 @@ export function createNextAddressIntegration(
     const session = await pollPrimaryClerkSessionUntil(
       connection.primaryBaseUrl,
       resolveConnectToken(connection),
-      (status) => status.signedIn,
+      (status) => sessionMatchesTenant(status, connection),
       {
         intervalMs: CONNECT_POLL_INTERVAL_MS,
         timeoutMs: SIGN_IN_POLL_TIMEOUT_MS,
@@ -303,7 +331,7 @@ export function createNextAddressIntegration(
       }
     );
     if (flowId !== connectFlowId) return false;
-    if (session?.signedIn) {
+    if (session && sessionMatchesTenant(session, connection)) {
       setSessionPoll(idleSessionPoll());
       return true;
     }
@@ -322,7 +350,7 @@ export function createNextAddressIntegration(
     const session = await pollPrimaryClerkSessionUntil(
       connection.primaryBaseUrl,
       resolveConnectToken(connection),
-      (status) => status.connected,
+      (status) => sessionMatchesTenant(status, connection) && status.connected,
       {
         intervalMs: CONNECT_POLL_INTERVAL_MS,
         timeoutMs: CONNECT_POLL_TIMEOUT_MS,
@@ -331,7 +359,7 @@ export function createNextAddressIntegration(
       }
     );
     if (flowId !== connectFlowId) return false;
-    if (session?.connected) {
+    if (session && sessionMatchesTenant(session, connection) && session.connected) {
       setSessionPoll(idleSessionPoll());
       return true;
     }

@@ -274,12 +274,86 @@ function appendConnectionStatusIcon(
   slot.replaceChildren(status);
 }
 
+function renderSyncBlockInto(
+  parent: HTMLElement,
+  state: ContactSyncDisplayState,
+  syncActions: SyncWidgetActions,
+): void {
+  if (state.status === "idle") return;
+
+  const block = el("div", "na-widget__sync");
+
+  if (state.status === "syncing") {
+    block.classList.add("na-widget__sync--syncing");
+    block.setAttribute("role", "status");
+    block.setAttribute("aria-live", "polite");
+    block.appendChild(el("p", "na-widget__sync-title", "Syncing with NextAddress…"));
+  } else if (state.status === "synced") {
+    block.classList.add("na-widget__sync--synced");
+    block.setAttribute("role", "status");
+    block.appendChild(el("p", "na-widget__sync-title", "Synced with NextAddress"));
+  } else if (state.status === "queued") {
+    block.classList.add("na-widget__sync--queued");
+    block.setAttribute("role", "status");
+    block.appendChild(el("p", "na-widget__sync-title", "Sync pending"));
+    block.appendChild(
+      el(
+        "p",
+        undefined,
+        "Your update is queued and will reach NextAddress on the next scheduled sync.",
+      ),
+    );
+  } else {
+    block.classList.add("na-widget__sync--failed");
+    block.setAttribute("role", "alert");
+    block.setAttribute("aria-live", "assertive");
+    block.appendChild(el("p", "na-widget__sync-title", "Syncing failed"));
+    block.appendChild(
+      el(
+        "p",
+        undefined,
+        state.httpStatus != null
+          ? `NextAddress returned status ${state.httpStatus}.`
+          : "We could not sync this contact update with NextAddress.",
+      ),
+    );
+    if (state.retryable && syncActions.onRetry) {
+      const row = el("div", "na-widget__sync-actions");
+      const retry = el("button", "na-widget__retry", "Try again");
+      retry.type = "button";
+      retry.disabled = !!syncActions.retryDisabled;
+      retry.addEventListener("click", syncActions.onRetry);
+      row.appendChild(retry);
+      block.appendChild(row);
+    }
+    const details = el("details", "na-widget__details");
+    const summary = el("summary", "na-widget__details-summary", "Error details");
+    details.appendChild(summary);
+    details.appendChild(el("p", "na-widget__error-message", state.errorMessage));
+    block.appendChild(details);
+  }
+
+  parent.appendChild(block);
+}
+
+/** Renders sync status inside a widget host (for custom connection UIs). */
+export function renderSyncBlock(
+  host: HTMLElement,
+  state: ContactSyncDisplayState,
+  syncActions: SyncWidgetActions,
+): void {
+  host.replaceChildren();
+  renderSyncBlockInto(host, state, syncActions);
+}
+
 export function renderConnectionSection(
   host: HTMLElement,
   view: WidgetConnectionView,
   tenantName: string,
   actions: ConnectionWidgetActions,
-  sessionPoll: SessionPollState = { active: false, timedOut: false, phase: null }
+  sessionPoll: SessionPollState = { active: false, timedOut: false, phase: null },
+  syncState: ContactSyncDisplayState | null = null,
+  syncActions: SyncWidgetActions = {},
 ): void {
   const section = el("section", "na-widget na-widget__connection");
   section.setAttribute("aria-label", "NextAddress");
@@ -390,78 +464,11 @@ export function renderConnectionSection(
 
   section.appendChild(footer);
 
+  if (syncState) {
+    renderSyncBlockInto(section, syncState, syncActions);
+  }
+
   host.replaceChildren(section);
-}
-
-export function renderSyncSection(
-  host: HTMLElement,
-  state: ContactSyncDisplayState,
-  syncActions: SyncWidgetActions,
-  connectionSection: HTMLElement | null
-): void {
-  const fragment = document.createDocumentFragment();
-  if (connectionSection) fragment.appendChild(connectionSection);
-
-  if (state.status === "idle") {
-    host.replaceChildren(fragment);
-    return;
-  }
-
-  const section = el("section", "na-widget__sync");
-  section.setAttribute("aria-label", "NextAddress sync status");
-
-  if (state.status === "syncing") {
-    section.classList.add("na-widget__sync--syncing");
-    section.setAttribute("role", "status");
-    section.setAttribute("aria-live", "polite");
-    section.appendChild(el("p", "na-widget__sync-title", "Syncing with NextAddress…"));
-  } else if (state.status === "synced") {
-    section.classList.add("na-widget__sync--synced");
-    section.setAttribute("role", "status");
-    section.appendChild(el("p", "na-widget__sync-title", "Synced with NextAddress"));
-  } else if (state.status === "queued") {
-    section.classList.add("na-widget__sync--queued");
-    section.setAttribute("role", "status");
-    section.appendChild(el("p", "na-widget__sync-title", "Sync pending"));
-    section.appendChild(
-      el(
-        "p",
-        undefined,
-        "Your update is queued and will reach NextAddress on the next scheduled sync."
-      )
-    );
-  } else {
-    section.classList.add("na-widget__sync--failed");
-    section.setAttribute("role", "alert");
-    section.setAttribute("aria-live", "assertive");
-    section.appendChild(el("p", "na-widget__sync-title", "Syncing failed"));
-    section.appendChild(
-      el(
-        "p",
-        undefined,
-        state.httpStatus != null
-          ? `NextAddress returned status ${state.httpStatus}.`
-          : "We could not sync this contact update with NextAddress."
-      )
-    );
-    if (state.retryable && syncActions.onRetry) {
-      const row = el("div", "na-widget__sync-actions");
-      const retry = el("button", "na-widget__retry", "Try again");
-      retry.type = "button";
-      retry.disabled = !!syncActions.retryDisabled;
-      retry.addEventListener("click", syncActions.onRetry);
-      row.appendChild(retry);
-      section.appendChild(row);
-    }
-    const details = el("details", "na-widget__details");
-    const summary = el("summary", "na-widget__details-summary", "Error details");
-    details.appendChild(summary);
-    details.appendChild(el("p", "na-widget__error-message", state.errorMessage));
-    section.appendChild(details);
-  }
-
-  fragment.appendChild(section);
-  host.replaceChildren(fragment);
 }
 
 export function renderWidget(
@@ -473,20 +480,13 @@ export function renderWidget(
   syncActions: SyncWidgetActions,
   sessionPoll: SessionPollState = { active: false, timedOut: false, phase: null }
 ): void {
-  const connectionRoot = el("div");
   renderConnectionSection(
-    connectionRoot,
+    host,
     connection,
     tenantName,
     connectionActions,
-    sessionPoll
+    sessionPoll,
+    syncState,
+    syncActions,
   );
-  const connectionSection = connectionRoot.firstElementChild as HTMLElement | null;
-
-  if (syncState == null) {
-    host.replaceChildren(...(connectionSection ? [connectionSection] : []));
-    return;
-  }
-
-  renderSyncSection(host, syncState, syncActions, connectionSection);
 }

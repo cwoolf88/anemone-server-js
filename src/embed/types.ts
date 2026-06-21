@@ -33,6 +33,8 @@ export type TenantConnectionInfo = {
   connected?: boolean;
   /** True when the tenant created the link through email auto-connect. */
   autoConnected?: boolean;
+  /** When set, primary Clerk session must match this email to count as signed in. */
+  tenantUserEmail?: string | null;
   mockMode: boolean;
 };
 

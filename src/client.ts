@@ -8,6 +8,8 @@ import type {
   ContactUpdateResponseBody,
   MintDirectConnectTokenRequest,
   MintDirectConnectTokenResponseBody,
+  MarkTenantExternalUserDeletedRequest,
+  MarkTenantExternalUserDeletedResponseBody,
   SimulateAddressChangeSecurityEventRequest,
   SimulateAddressChangeSecurityEventResponse,
   ArmIntegrationSimulationRequest,
@@ -249,6 +251,26 @@ export class NextAddressClient {
       init?.path ?? "/api/v1/simulate/arm",
       body,
       (parsed) => mapArmIntegrationSimulationResponse(parsed),
+    );
+  }
+
+  /**
+   * Mark a tenant-side user as deleted on next-address-primary.
+   * Hides the associated tenant connection from NextAddress UIs.
+   */
+  async markTenantExternalUserDeleted(
+    body: MarkTenantExternalUserDeletedRequest,
+    init?: { path?: string },
+  ): Promise<MarkTenantExternalUserDeletedResponseBody> {
+    return this.postJson(
+      init?.path ?? "/api/v1/tenant-users/mark-deleted",
+      body,
+      (parsed) => ({
+        status: parsed.status === "deleted" ? "deleted" : "not_found",
+        message: typeof parsed.message === "string" ? parsed.message : undefined,
+        correlationId:
+          typeof parsed.correlationId === "string" ? parsed.correlationId : undefined,
+      }),
     );
   }
 

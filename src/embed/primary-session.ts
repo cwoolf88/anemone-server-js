@@ -6,6 +6,18 @@ export type PrimarySession = {
   merchantSettingsPath: string | null;
 };
 
+/** When `tenantUserEmail` is set, the primary Clerk session must match it. */
+export function primarySessionMatchesTenant(
+  session: PrimarySession,
+  tenantUserEmail?: string | null,
+): boolean {
+  if (!session.signedIn) return false;
+  const expected = tenantUserEmail?.trim().toLowerCase();
+  if (!expected) return true;
+  const actual = session.email?.trim().toLowerCase();
+  return !!actual && actual === expected;
+}
+
 const PRIMARY_SESSION_MESSAGE = "next-address-primary-session";
 const PROBE_TIMEOUT_MS = 8_000;
 const CACHE_TTL_MS = 30_000;

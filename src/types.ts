@@ -180,6 +180,17 @@ export interface MintDirectConnectTokenResponseBody {
   expiresAt: string;
 }
 
+/** Tenant-side demo account removed — hide the link from NextAddress UIs. */
+export interface MarkTenantExternalUserDeletedRequest {
+  externalUserId: ExternalUserId;
+}
+
+export interface MarkTenantExternalUserDeletedResponseBody {
+  status: "deleted" | "not_found";
+  message?: string;
+  correlationId?: string;
+}
+
 /** Active 24-hour address-change security hold on next-address-primary. */
 export type AddressChangeHoldStatus = {
   id: string;

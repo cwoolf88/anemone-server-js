@@ -25,12 +25,25 @@ export {
   shouldShowSessionPollRefresh,
 } from "./integration.js";
 export { createNextAddressWidget } from "./widget.js";
+export { renderSyncBlock } from "./widget-render.js";
+export type { SyncWidgetActions } from "./widget-render.js";
 export { createNextAddressSimulationWidget } from "./simulation-widget.js";
 export { createNextAddressNetworkActivityWidget } from "./network-activity-widget.js";
 export type {
   NextAddressNetworkActivityWidgetHandle,
   NextAddressNetworkActivityWidgetOptions,
 } from "./network-activity-widget.js";
+export {
+  enableNextAddressDebugMode,
+  disableNextAddressDebugMode,
+  isNextAddressDebugModeEnabled,
+  subscribeNextAddressDebugMode,
+} from "./dev-debug.js";
+export {
+  createNextAddressDevToolsLauncher,
+  type NextAddressDevToolsLauncherHandle,
+  type NextAddressDevToolsLauncherOptions,
+} from "./dev-tools-launcher.js";
 export { loggedFetch } from "./logged-fetch.js";
 export {
   SimulationEventLog,
@@ -85,6 +98,7 @@ export type {
 } from "./themes.js";
 export {
   invalidatePrimarySessionCache,
+  primarySessionMatchesTenant,
   probePrimaryClerkSession,
   type PrimarySession,
 } from "./primary-session.js";
