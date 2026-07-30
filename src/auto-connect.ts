@@ -1,6 +1,6 @@
 import { parseWebhookEvent, verifyWebhookSignature } from "./webhook.js";
 
-export const AUTO_CONNECT_MATCH_PATH = "/api/next-address/auto-connect/match";
+export const AUTO_CONNECT_MATCH_PATH = "/api/anemone/auto-connect/match";
 
 export type AutoConnectMatchHandlerOptions = {
   webhookSecret: string;
@@ -23,7 +23,7 @@ function json(body: unknown, status = 200): Response {
 }
 
 /**
- * Standard tenant endpoint handler for NextAddress-initiated email matching.
+ * Standard tenant endpoint handler for Anemone-initiated email matching.
  *
  * Mount this at {@link AUTO_CONNECT_MATCH_PATH}. The tenant only supplies the
  * local lookup from verified email to its stable external user id.

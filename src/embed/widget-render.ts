@@ -1,3 +1,7 @@
+import {
+  contactSyncDisplayCopy,
+  resolveProductDisplayName,
+} from "../branding.js";
 import type { ContactSyncDisplayState } from "../sync.js";
 import {
   connectionStatusTooltip,
@@ -33,35 +37,35 @@ function el<K extends keyof HTMLElementTagNameMap>(
 }
 
 function ghostLine(widthClass: string): HTMLDivElement {
-  const line = el("div", `na-widget__ghost-line ${widthClass}`);
+  const line = el("div", `an-widget__ghost-line ${widthClass}`);
   line.setAttribute("aria-hidden", "true");
   return line;
 }
 
-function renderConnectionGhost(section: HTMLElement): void {
-  const ghost = el("div", "na-widget__ghost");
+function renderConnectionGhost(section: HTMLElement, productName: string): void {
+  const ghost = el("div", "an-widget__ghost");
   ghost.setAttribute("aria-hidden", "true");
 
-  const header = el("div", "na-widget__ghost-header");
-  const top = el("div", "na-widget__header-top");
-  const copy = el("div", "na-widget__ghost-copy");
-  copy.appendChild(ghostLine("na-widget__ghost-line--title"));
-  copy.appendChild(ghostLine("na-widget__ghost-line--subtitle"));
+  const header = el("div", "an-widget__ghost-header");
+  const top = el("div", "an-widget__header-top");
+  const copy = el("div", "an-widget__ghost-copy");
+  copy.appendChild(ghostLine("an-widget__ghost-line--title"));
+  copy.appendChild(ghostLine("an-widget__ghost-line--subtitle"));
   top.appendChild(copy);
-  const slot = el("div", "na-widget__connection-status-slot");
-  slot.appendChild(el("div", "na-widget__ghost-icon"));
+  const slot = el("div", "an-widget__connection-status-slot");
+  slot.appendChild(el("div", "an-widget__ghost-icon"));
   top.appendChild(slot);
   header.appendChild(top);
-  header.appendChild(el("div", "na-widget__ghost-pill"));
+  header.appendChild(el("div", "an-widget__ghost-pill"));
   ghost.appendChild(header);
 
-  const footer = el("div", "na-widget__ghost-footer");
-  footer.appendChild(el("div", "na-widget__ghost-btn"));
+  const footer = el("div", "an-widget__ghost-footer");
+  footer.appendChild(el("div", "an-widget__ghost-btn"));
   ghost.appendChild(footer);
 
   section.appendChild(ghost);
 
-  const sr = el("span", "na-widget__ghost-sr", "Loading NextAddress…");
+  const sr = el("span", "an-widget__ghost-sr", `Loading ${productName}…`);
   section.appendChild(sr);
 }
 
@@ -114,19 +118,20 @@ function appendSettingsGearIcon(svg: SVGSVGElement): void {
 function appendSettingsButton(
   container: HTMLElement,
   view: WidgetConnectionView,
-  onOpenSettings: () => void
+  onOpenSettings: () => void,
+  productName: string,
 ): void {
   if (!view.signedIntoPrimary) return;
 
-  const label = settingsButtonLabel(true);
-  const btn = el("button", "na-widget__settings-btn");
+  const label = settingsButtonLabel(true, productName);
+  const btn = el("button", "an-widget__settings-btn");
   btn.type = "button";
   btn.setAttribute("aria-label", label);
   btn.title = label;
   btn.disabled = view.statusLoading;
 
   const svg = createConnectionStatusSvg(16);
-  svg.setAttribute("class", "na-widget__settings-icon");
+  svg.setAttribute("class", "an-widget__settings-icon");
   appendSettingsGearIcon(svg);
   btn.appendChild(svg);
   btn.addEventListener("click", onOpenSettings);
@@ -152,13 +157,13 @@ function appendSessionPollRefreshButton(
   onRetry: () => void
 ): void {
   const label = sessionPollRefreshLabel(poll.phase);
-  const btn = el("button", "na-widget__session-refresh-btn");
+  const btn = el("button", "an-widget__session-refresh-btn");
   btn.type = "button";
   btn.setAttribute("aria-label", label);
   btn.title = label;
 
   const svg = createConnectionStatusSvg(16);
-  svg.setAttribute("class", "na-widget__session-refresh-icon");
+  svg.setAttribute("class", "an-widget__session-refresh-icon");
   appendRefreshIcon(svg);
   btn.appendChild(svg);
   btn.addEventListener("click", onRetry);
@@ -198,7 +203,7 @@ function rippleOpacityAnimate(begin: string): SVGAnimateElement {
 
 /** Concentric rings expanding from the icon center until clipped at the edge. */
 function appendLoadingPulse(svg: SVGSVGElement): void {
-  const clipId = `na-ripple-clip-${Math.random().toString(36).slice(2, 9)}`;
+  const clipId = `an-ripple-clip-${Math.random().toString(36).slice(2, 9)}`;
   const defs = svgEl("defs");
   const clipPath = svgEl("clipPath");
   clipPath.setAttribute("id", clipId);
@@ -211,13 +216,13 @@ function appendLoadingPulse(svg: SVGSVGElement): void {
   svg.appendChild(defs);
 
   const ripples = svgEl("g");
-  ripples.setAttribute("class", "na-widget__connection-status-ripples");
+  ripples.setAttribute("class", "an-widget__connection-status-ripples");
   ripples.setAttribute("clip-path", `url(#${clipId})`);
 
   for (let i = 0; i < LOADING_RIPPLE_COUNT; i++) {
     const begin = `${((i * LOADING_RIPPLE_DUR_S) / LOADING_RIPPLE_COUNT).toFixed(2)}s`;
     const circle = svgEl("circle");
-    circle.setAttribute("class", "na-widget__connection-status-ripple");
+    circle.setAttribute("class", "an-widget__connection-status-ripple");
     circle.setAttribute("cx", "12");
     circle.setAttribute("cy", "12");
     circle.setAttribute("r", "0.5");
@@ -228,7 +233,7 @@ function appendLoadingPulse(svg: SVGSVGElement): void {
   svg.appendChild(ripples);
 
   const hub = svgEl("circle");
-  hub.setAttribute("class", "na-widget__connection-status-ripple-hub");
+  hub.setAttribute("class", "an-widget__connection-status-ripple-hub");
   hub.setAttribute("cx", "12");
   hub.setAttribute("cy", "12");
   hub.setAttribute("r", "1.25");
@@ -237,7 +242,7 @@ function appendLoadingPulse(svg: SVGSVGElement): void {
 
 function createConnectionStatusSvg(sizePx: number): SVGSVGElement {
   const svg = svgEl("svg");
-  svg.setAttribute("class", "na-widget__connection-status-icon");
+  svg.setAttribute("class", "an-widget__connection-status-icon");
   svg.setAttribute("width", String(sizePx));
   svg.setAttribute("height", String(sizePx));
   svg.setAttribute("viewBox", "0 0 24 24");
@@ -248,11 +253,12 @@ function createConnectionStatusSvg(sizePx: number): SVGSVGElement {
 function appendConnectionStatusIcon(
   slot: HTMLElement,
   view: WidgetConnectionView,
-  mockMode: boolean
+  mockMode: boolean,
+  productName: string,
 ): void {
   const connected = view.connected;
-  const tooltip = connectionStatusTooltip(view, mockMode);
-  const status = el("span", "na-widget__connection-status");
+  const tooltip = connectionStatusTooltip(view, mockMode, productName);
+  const status = el("span", "an-widget__connection-status");
   status.tabIndex = 0;
   status.setAttribute("role", "status");
   status.setAttribute("data-na-tooltip", tooltip);
@@ -261,11 +267,11 @@ function appendConnectionStatusIcon(
   const svg = createConnectionStatusSvg(16);
 
   if (view.statusLoading) {
-    status.classList.add("na-widget__connection-status--loading");
+    status.classList.add("an-widget__connection-status--loading");
     appendLoadingPulse(svg);
   } else {
     status.classList.add(
-      connected ? "na-widget__connection-status--connected" : "na-widget__connection-status--disconnected"
+      connected ? "an-widget__connection-status--connected" : "an-widget__connection-status--disconnected"
     );
     appendCheckmarkIcon(svg);
   }
@@ -278,58 +284,54 @@ function renderSyncBlockInto(
   parent: HTMLElement,
   state: ContactSyncDisplayState,
   syncActions: SyncWidgetActions,
+  productName?: string,
 ): void {
   if (state.status === "idle") return;
 
-  const block = el("div", "na-widget__sync");
+  const copy = contactSyncDisplayCopy(productName);
+  const block = el("div", "an-widget__sync");
 
   if (state.status === "syncing") {
-    block.classList.add("na-widget__sync--syncing");
+    block.classList.add("an-widget__sync--syncing");
     block.setAttribute("role", "status");
     block.setAttribute("aria-live", "polite");
-    block.appendChild(el("p", "na-widget__sync-title", "Syncing with NextAddress…"));
+    block.appendChild(el("p", "an-widget__sync-title", copy.syncing));
   } else if (state.status === "synced") {
-    block.classList.add("na-widget__sync--synced");
+    block.classList.add("an-widget__sync--synced");
     block.setAttribute("role", "status");
-    block.appendChild(el("p", "na-widget__sync-title", "Synced with NextAddress"));
+    block.appendChild(el("p", "an-widget__sync-title", copy.synced));
   } else if (state.status === "queued") {
-    block.classList.add("na-widget__sync--queued");
+    block.classList.add("an-widget__sync--queued");
     block.setAttribute("role", "status");
-    block.appendChild(el("p", "na-widget__sync-title", "Sync pending"));
-    block.appendChild(
-      el(
-        "p",
-        undefined,
-        "Your update is queued and will reach NextAddress on the next scheduled sync.",
-      ),
-    );
+    block.appendChild(el("p", "an-widget__sync-title", copy.queuedTitle));
+    block.appendChild(el("p", undefined, copy.queuedBody));
   } else {
-    block.classList.add("na-widget__sync--failed");
+    block.classList.add("an-widget__sync--failed");
     block.setAttribute("role", "alert");
     block.setAttribute("aria-live", "assertive");
-    block.appendChild(el("p", "na-widget__sync-title", "Syncing failed"));
+    block.appendChild(el("p", "an-widget__sync-title", copy.failedTitle));
     block.appendChild(
       el(
         "p",
         undefined,
         state.httpStatus != null
-          ? `NextAddress returned status ${state.httpStatus}.`
-          : "We could not sync this contact update with NextAddress.",
+          ? copy.failedWithStatus(state.httpStatus)
+          : copy.failedBody,
       ),
     );
     if (state.retryable && syncActions.onRetry) {
-      const row = el("div", "na-widget__sync-actions");
-      const retry = el("button", "na-widget__retry", "Try again");
+      const row = el("div", "an-widget__sync-actions");
+      const retry = el("button", "an-widget__retry", "Try again");
       retry.type = "button";
       retry.disabled = !!syncActions.retryDisabled;
       retry.addEventListener("click", syncActions.onRetry);
       row.appendChild(retry);
       block.appendChild(row);
     }
-    const details = el("details", "na-widget__details");
-    const summary = el("summary", "na-widget__details-summary", "Error details");
+    const details = el("details", "an-widget__details");
+    const summary = el("summary", "an-widget__details-summary", "Error details");
     details.appendChild(summary);
-    details.appendChild(el("p", "na-widget__error-message", state.errorMessage));
+    details.appendChild(el("p", "an-widget__error-message", state.errorMessage));
     block.appendChild(details);
   }
 
@@ -341,9 +343,10 @@ export function renderSyncBlock(
   host: HTMLElement,
   state: ContactSyncDisplayState,
   syncActions: SyncWidgetActions,
+  productName?: string,
 ): void {
   host.replaceChildren();
-  renderSyncBlockInto(host, state, syncActions);
+  renderSyncBlockInto(host, state, syncActions, productName);
 }
 
 export function renderConnectionSection(
@@ -354,21 +357,23 @@ export function renderConnectionSection(
   sessionPoll: SessionPollState = { active: false, timedOut: false, phase: null },
   syncState: ContactSyncDisplayState | null = null,
   syncActions: SyncWidgetActions = {},
+  productName?: string,
 ): void {
-  const section = el("section", "na-widget na-widget__connection");
-  section.setAttribute("aria-label", "NextAddress");
+  const product = resolveProductDisplayName(productName);
+  const section = el("section", "an-widget an-widget__connection");
+  section.setAttribute("aria-label", product);
 
   if (view.loading) {
     section.setAttribute("aria-busy", "true");
-    renderConnectionGhost(section);
+    renderConnectionGhost(section, product);
     host.replaceChildren(section);
     return;
   }
   section.removeAttribute("aria-busy");
 
   if (!view.info) {
-    const unavailable = el("section", "na-widget__connection-unavailable");
-    unavailable.setAttribute("aria-label", "NextAddress");
+    const unavailable = el("section", "an-widget__connection-unavailable");
+    unavailable.setAttribute("aria-label", product);
     unavailable.setAttribute("role", "alert");
     unavailable.appendChild(
       el("p", undefined, view.error ?? "Tenant connection unavailable.")
@@ -378,16 +383,18 @@ export function renderConnectionSection(
   }
 
   const info = view.info;
-  const header = el("div", "na-widget__header");
-  const top = el("div", "na-widget__header-top");
-  const copy = el("div", "na-widget__copy");
-  copy.appendChild(el("h2", "na-widget__title", "NextAddress"));
-  copy.appendChild(el("p", "na-widget__subtitle", connectionSubtitle(view, tenantName)));
+  const header = el("div", "an-widget__header");
+  const top = el("div", "an-widget__header-top");
+  const copy = el("div", "an-widget__copy");
+  copy.appendChild(el("h2", "an-widget__title", product));
+  copy.appendChild(
+    el("p", "an-widget__subtitle", connectionSubtitle(view, tenantName, product)),
+  );
   top.appendChild(copy);
 
-  const headerActions = el("div", "na-widget__header-actions");
-  const connectionSlot = el("div", "na-widget__connection-status-slot");
-  appendConnectionStatusIcon(connectionSlot, view, info.mockMode);
+  const headerActions = el("div", "an-widget__header-actions");
+  const connectionSlot = el("div", "an-widget__connection-status-slot");
+  appendConnectionStatusIcon(connectionSlot, view, info.mockMode, product);
   headerActions.appendChild(connectionSlot);
   if (
     shouldShowSessionPollRefresh(view, sessionPoll) &&
@@ -403,33 +410,33 @@ export function renderConnectionSection(
   header.appendChild(top);
 
   if (!info.mockMode && view.signedIntoPrimary) {
-    const signInBadge = el("span", "na-widget__badge na-widget__badge--signed-in");
+    const signInBadge = el("span", "an-widget__badge an-widget__badge--signed-in");
     signInBadge.textContent = view.primaryEmail
       ? `Signed in as ${view.primaryEmail}`
       : "Signed in";
     header.appendChild(signInBadge);
   }
   if (view.autoConnected) {
-    header.appendChild(el("span", "na-widget__badge na-widget__badge--auto", "Auto-connected"));
+    header.appendChild(el("span", "an-widget__badge an-widget__badge--auto", "Auto-connected"));
   }
 
   section.appendChild(header);
 
   if (view.error) {
-    section.appendChild(el("p", "na-widget__error", view.error));
+    section.appendChild(el("p", "an-widget__error", view.error));
   }
 
-  const footer = el("div", "na-widget__footer");
-  const actionsRow = el("div", "na-widget__actions");
+  const footer = el("div", "an-widget__footer");
+  const actionsRow = el("div", "an-widget__actions");
 
   if (view.connected && !view.signedIntoPrimary) {
-    const btn = el("button", "na-widget__btn na-widget__btn--primary", "Sign in");
+    const btn = el("button", "an-widget__btn an-widget__btn--primary", "Sign in");
     btn.type = "button";
     btn.disabled = !info.connectSignInUrl || view.statusLoading;
     btn.addEventListener("click", actions.onConnectAccount);
     actionsRow.appendChild(btn);
   } else if (view.connected) {
-    const btn = el("button", "na-widget__btn na-widget__btn--secondary", "Disconnect account");
+    const btn = el("button", "an-widget__btn an-widget__btn--secondary", "Disconnect account");
     btn.type = "button";
     btn.disabled = !info.disconnectUrl || (!view.signedIntoPrimary && !info.disconnectSignInUrl);
     if (!view.signedIntoPrimary && info.disconnectSignInUrl) {
@@ -438,7 +445,7 @@ export function renderConnectionSection(
     btn.addEventListener("click", actions.onDisconnect);
     actionsRow.appendChild(btn);
   } else {
-    const btn = el("button", "na-widget__btn na-widget__btn--primary", "Connect account");
+    const btn = el("button", "an-widget__btn an-widget__btn--primary", "Connect account");
     btn.type = "button";
     const canConnect = view.signedIntoPrimary
       ? !!info.connectUrl
@@ -449,8 +456,8 @@ export function renderConnectionSection(
     if (!info.connectSignInUrl) {
       const hint = el(
         "p",
-        "na-widget__hint",
-        "Set NEXT_ADDRESS_PRIMARY_BASE_URL to enable sign-in."
+        "an-widget__hint",
+        "Set ANEMONE_PRIMARY_BASE_URL to enable sign-in."
       );
       actionsRow.appendChild(hint);
     }
@@ -459,13 +466,13 @@ export function renderConnectionSection(
   footer.appendChild(actionsRow);
 
   if (info.primaryBaseUrl && !info.mockMode) {
-    appendSettingsButton(footer, view, actions.onOpenSettings);
+    appendSettingsButton(footer, view, actions.onOpenSettings, product);
   }
 
   section.appendChild(footer);
 
   if (syncState) {
-    renderSyncBlockInto(section, syncState, syncActions);
+    renderSyncBlockInto(section, syncState, syncActions, product);
   }
 
   host.replaceChildren(section);
@@ -478,7 +485,8 @@ export function renderWidget(
   connectionActions: ConnectionWidgetActions,
   syncState: ContactSyncDisplayState | null,
   syncActions: SyncWidgetActions,
-  sessionPoll: SessionPollState = { active: false, timedOut: false, phase: null }
+  sessionPoll: SessionPollState = { active: false, timedOut: false, phase: null },
+  productName?: string,
 ): void {
   renderConnectionSection(
     host,
@@ -488,5 +496,6 @@ export function renderWidget(
     sessionPoll,
     syncState,
     syncActions,
+    productName,
   );
 }

@@ -1,5 +1,5 @@
 /**
- * User identifier on the 3rd-party system. Never send next-address-primary internal user IDs here.
+ * User identifier on the 3rd-party system. Never send anemone internal user IDs here.
  *
  * For browser connect/disconnect URLs, mint an opaque token via POST /api/v1/direct-connect-tokens, or sign
  * with encodeExternalUserId (api key prefix + user id only — no tenant id).
@@ -25,7 +25,7 @@ export interface AddressPayload {
   label?: string;
 }
 
-/** Webhook/request envelope from next-address-primary → 3rd party. */
+/** Webhook/request envelope from anemone → 3rd party. */
 export type OutboundWebhookEvent =
   | ContactChangeWebhookEvent
   | ContactUpdateReviewedEvent
@@ -52,7 +52,7 @@ export interface ContactChangeWebhookEvent {
 
 /**
  * Fired (to the origin tenant) when a non-certified contact update is approved
- * or rejected in next-address-primary.
+ * or rejected in anemone.
  */
 export type ContactUpdateReviewStatus = "approved" | "rejected";
 
@@ -74,7 +74,7 @@ export interface ContactUpdateReviewedEvent {
 export interface AutoConnectMatchRequestEvent {
   event: "account.email_match.requested";
   occurredAt: string;
-  /** Verified NextAddress email. Use only to check for an existing tenant account. */
+  /** Verified Anemone email. Use only to check for an existing tenant account. */
   email: string;
   /** Primary-generated audit/correlation id for this one lookup. */
   correlationId: string;
@@ -99,7 +99,7 @@ export interface ContactUpdateRequest {
   address?: AddressPayload;
   /**
    * Optional previous address from the tenant system. Primary can use this to
-   * fuzzy-match which saved NextAddress address should be updated; it does not
+   * fuzzy-match which saved Anemone address should be updated; it does not
    * replace `address`, which remains the requested new value/patch.
    */
   previousAddress?: AddressPayload;
@@ -112,7 +112,7 @@ export interface ContactUpdateRequest {
 
 /**
  * Primary indicates whether the change was applied globally or needs end-user review.
- * Exact strings should match next-address-primary API contract.
+ * Exact strings should match anemone API contract.
  */
 export type ContactUpdateProcessingStatus =
   | "processed_globally"
@@ -154,7 +154,7 @@ export interface TenantConnectionResponseBody {
 export interface TenantAutoConnectRequest {
   /** Verified email from the tenant-side account currently signed into your app. */
   email: string;
-  /** Tenant-side stable user identifier to link when the email matches exactly one NextAddress user. */
+  /** Tenant-side stable user identifier to link when the email matches exactly one Anemone user. */
   externalUserId: ExternalUserId;
 }
 
@@ -180,7 +180,7 @@ export interface MintDirectConnectTokenResponseBody {
   expiresAt: string;
 }
 
-/** Tenant-side demo account removed — hide the link from NextAddress UIs. */
+/** Tenant-side demo account removed — hide the link from Anemone UIs. */
 export interface MarkTenantExternalUserDeletedRequest {
   externalUserId: ExternalUserId;
 }
@@ -191,7 +191,7 @@ export interface MarkTenantExternalUserDeletedResponseBody {
   correlationId?: string;
 }
 
-/** Active 24-hour address-change security hold on next-address-primary. */
+/** Active 24-hour address-change security hold on anemone. */
 export type AddressChangeHoldStatus = {
   id: string;
   reason: string;
@@ -225,7 +225,7 @@ export interface SimulateAddressChangeSecurityEventResponse {
 }
 
 /** Who should fail on the next address/contact sync attempt. */
-export type AddressUpdateFailureSource = "merchant" | "nextaddress";
+export type AddressUpdateFailureSource = "merchant" | "anemone";
 
 export interface SimulateFailedAddressUpdateRequest {
   externalUserId: ExternalUserId;

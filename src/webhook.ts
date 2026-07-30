@@ -9,8 +9,8 @@ import type {
   VerifiedWebhookPayload,
 } from "./types.js";
 
-const SIGNATURE_HEADER = "x-next-address-signature";
-const TIMESTAMP_HEADER = "x-next-address-timestamp";
+const SIGNATURE_HEADER = "x-anemone-signature";
+const TIMESTAMP_HEADER = "x-anemone-timestamp";
 const DEFAULT_TOLERANCE_SEC = 300;
 
 function hexToBuf(hex: string): Buffer {
@@ -21,8 +21,8 @@ function hexToBuf(hex: string): Buffer {
 /**
  * Verifies HMAC-SHA256 over `${timestamp}.${rawBody}` using the shared webhook secret.
  * Primary should send:
- * - `X-Next-Address-Timestamp`: unix seconds as string
- * - `X-Next-Address-Signature`: lowercase hex HMAC digest
+ * - `X-Anemone-Timestamp`: unix seconds as string
+ * - `X-Anemone-Signature`: lowercase hex HMAC digest
  */
 export function verifyWebhookSignature(
   rawBody: string | Buffer,

@@ -1,11 +1,17 @@
-import { NextAddressError } from "./errors.js";
+import {
+  buildContactUpdateFromMerchant,
+  type ContactInfoMapping,
+} from "./contact-mapping.js";
+import { AnemoneError } from "./errors.js";
 import { isIntegrationSimulationScenario } from "./simulation-scenarios.js";
 import type {
   AddressChangeHoldStatus,
+  ContactChangeKind,
   ContactSaveResult,
   ContactUpdateQueueResponseBody,
   ContactUpdateRequest,
   ContactUpdateResponseBody,
+  ExternalUserId,
   MintDirectConnectTokenRequest,
   MintDirectConnectTokenResponseBody,
   MarkTenantExternalUserDeletedRequest,
@@ -23,10 +29,10 @@ import type {
   TenantDisconnectRequest,
 } from "./types.js";
 
-export interface NextAddressClientOptions {
+export interface AnemoneClientOptions {
   /** Must be https in production; enforced unless allowInsecureLocalhost is true */
   baseUrl: string;
-  /** API credential issued by next-address-primary (store as secret) */
+  /** API credential issued by anemone (store as secret) */
   apiKey: string;
   /** Optional custom fetch (testing) */
   fetchImpl?: typeof fetch;
@@ -43,40 +49,40 @@ function assertHttps(url: string, allowLocal: boolean): void {
   try {
     parsed = new URL(url);
   } catch {
-    throw new NextAddressError("Invalid baseUrl", "INVALID_BASE_URL");
+    throw new AnemoneError("Invalid baseUrl", "INVALID_BASE_URL");
   }
   if (parsed.protocol === "https:") return;
   if (allowLocal && parsed.hostname === "localhost" && parsed.protocol === "http:") return;
   if (allowLocal && parsed.hostname === "127.0.0.1" && parsed.protocol === "http:") return;
-  throw new NextAddressError(
+  throw new AnemoneError(
     "baseUrl must use https (or http://localhost for local dev)",
     "INSECURE_BASE_URL"
   );
 }
 
 /**
- * Server-side client for pushing contact updates to next-address-primary.
+ * Server-side client for pushing contact updates to anemone.
  * Uses Bearer API key over TLS; align path with your primary OpenAPI/route.
  */
-export class NextAddressClient {
+export class AnemoneClient {
   private readonly baseUrl: string;
   private readonly apiKey: string;
   private readonly fetchImpl: typeof fetch;
   private readonly timeoutMs: number;
 
-  constructor(options: NextAddressClientOptions) {
+  constructor(options: AnemoneClientOptions) {
     assertHttps(options.baseUrl, options.allowInsecureLocalhost ?? false);
     this.baseUrl = options.baseUrl.replace(/\/$/, "");
     this.apiKey = options.apiKey;
     this.fetchImpl = options.fetchImpl ?? globalThis.fetch;
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT;
     if (typeof this.fetchImpl !== "function") {
-      throw new NextAddressError("fetch is not available (Node 18+ required)", "NO_FETCH");
+      throw new AnemoneError("fetch is not available (Node 18+ required)", "NO_FETCH");
     }
   }
 
   /**
-   * Save contact info to next-address-primary. On transient failure, enqueues for
+   * Save contact info to anemone. On transient failure, enqueues for
    * primary to process twice daily, on restart, or when drained manually.
    */
   async saveContactInfo(
@@ -86,13 +92,33 @@ export class NextAddressClient {
     try {
       return await this.submitContactUpdate(body, init);
     } catch (e) {
-      const err = e instanceof NextAddressError ? e : toTransportError(e);
+      const err = e instanceof AnemoneError ? e : toTransportError(e);
       if (!isQueueableContactUpdateError(err)) throw err;
       return this.enqueueContactUpdate(body, {
         idempotencyKey: init?.idempotencyKey,
         path: init?.queuePath,
       });
     }
+  }
+
+  /**
+   * Save contact info using a merchant-side record and optional field mapping.
+   * Maps via {@link buildContactUpdateFromMerchant}, then calls {@link saveContactInfo}.
+   */
+  async saveMerchantContactInfo<
+    MerchantContact extends Record<string, unknown> = Record<string, unknown>,
+  >(
+    input: {
+      externalUserId: ExternalUserId;
+      kind: ContactChangeKind;
+      merchant: MerchantContact;
+      mapping?: ContactInfoMapping<MerchantContact>;
+      previousMerchant?: MerchantContact;
+    },
+    init?: { idempotencyKey?: string; path?: string; queuePath?: string },
+  ): Promise<ContactSaveResult> {
+    const body = buildContactUpdateFromMerchant(input);
+    return this.saveContactInfo(body, init);
   }
 
   /** PATCH live contact update. */
@@ -143,7 +169,7 @@ export class NextAddressClient {
       undefined,
       (parsed) => {
         if (typeof parsed.linkToken !== "string" || typeof parsed.expiresAt !== "string") {
-          throw new NextAddressError("Response missing linkToken or expiresAt", "BAD_RESPONSE");
+          throw new AnemoneError("Response missing linkToken or expiresAt", "BAD_RESPONSE");
         }
         return {
           linkToken: parsed.linkToken,
@@ -169,7 +195,7 @@ export class NextAddressClient {
   }
 
   /**
-   * Auto-connect one tenant-side account to a NextAddress account by verified email.
+   * Auto-connect one tenant-side account to a Anemone account by verified email.
    * This performs a single tenant-authenticated membership check and never requires
    * exporting tenant email lists to primary.
    */
@@ -198,9 +224,9 @@ export class NextAddressClient {
   }
 
   /**
-   * Simulate a suspicious-network security event on next-address-primary for the linked user.
+   * Simulate a suspicious-network security event on anemone for the linked user.
    * Pauses address changes for 24 hours until the user re-verifies their Clerk email.
-   * Primary must allow simulation (non-production or `NEXT_ADDRESS_ALLOW_SIMULATE_SECURITY_HOLD`).
+   * Primary must allow simulation (non-production or `ANEMONE_ALLOW_SIMULATE_SECURITY_HOLD`).
    */
   async simulateAddressChangeSecurityEvent(
     body: SimulateAddressChangeSecurityEventRequest,
@@ -214,8 +240,8 @@ export class NextAddressClient {
   }
 
   /**
-   * Arm the next address update to fail from the chosen side (merchant PATCH or NextAddress webhook push).
-   * Primary must allow simulation (non-production or `NEXT_ADDRESS_ALLOW_SIMULATE_SECURITY_HOLD`).
+   * Arm the next address update to fail from the chosen side (merchant PATCH or Anemone webhook push).
+   * Primary must allow simulation (non-production or `ANEMONE_ALLOW_SIMULATE_SECURITY_HOLD`).
    */
   async simulateFailedAddressUpdate(
     body: SimulateFailedAddressUpdateRequest,
@@ -223,10 +249,10 @@ export class NextAddressClient {
     return this.armIntegrationSimulation({
       externalUserId: body.externalUserId,
       scenario:
-        body.source === "merchant" ? "sync_failure_merchant" : "sync_failure_nextaddress",
+        body.source === "merchant" ? "sync_failure_merchant" : "sync_failure_anemone",
     }).then((result) => {
       if (result.status === "applied") {
-        throw new NextAddressError(
+        throw new AnemoneError(
           "Expected armed simulation, got applied security hold",
           "BAD_RESPONSE",
         );
@@ -255,8 +281,8 @@ export class NextAddressClient {
   }
 
   /**
-   * Mark a tenant-side user as deleted on next-address-primary.
-   * Hides the associated tenant connection from NextAddress UIs.
+   * Mark a tenant-side user as deleted on anemone.
+   * Hides the associated tenant connection from Anemone UIs.
    */
   async markTenantExternalUserDeleted(
     body: MarkTenantExternalUserDeletedRequest,
@@ -333,10 +359,10 @@ export class NextAddressClient {
       try {
         parsed = text ? JSON.parse(text) : {};
       } catch {
-        throw new NextAddressError("Invalid JSON in response", "BAD_RESPONSE", res.status, text);
+        throw new AnemoneError("Invalid JSON in response", "BAD_RESPONSE", res.status, text);
       }
       if (!res.ok) {
-        throw new NextAddressError(
+        throw new AnemoneError(
           `Request failed: ${res.status}`,
           "HTTP_ERROR",
           res.status,
@@ -344,17 +370,17 @@ export class NextAddressClient {
         );
       }
       if (!isRecord(parsed)) {
-        throw new NextAddressError("Response is not a JSON object", "BAD_RESPONSE", res.status, parsed);
+        throw new AnemoneError("Response is not a JSON object", "BAD_RESPONSE", res.status, parsed);
       }
       const requireStatus = options?.requireStatus ?? true;
       if (requireStatus && typeof parsed.status !== "string") {
-        throw new NextAddressError("Response missing status", "BAD_RESPONSE", res.status, parsed);
+        throw new AnemoneError("Response missing status", "BAD_RESPONSE", res.status, parsed);
       }
       return mapResponse(parsed);
     } catch (e) {
-      if (e instanceof NextAddressError) throw e;
+      if (e instanceof AnemoneError) throw e;
       if (e instanceof Error && e.name === "AbortError") {
-        throw new NextAddressError("Request timed out", "TIMEOUT");
+        throw new AnemoneError("Request timed out", "TIMEOUT");
       }
       throw e;
     } finally {
@@ -367,17 +393,17 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
-function toTransportError(e: unknown): NextAddressError {
+function toTransportError(e: unknown): AnemoneError {
   if (e instanceof Error) {
-    return new NextAddressError(e.message, "TRANSPORT_ERROR");
+    return new AnemoneError(e.message, "TRANSPORT_ERROR");
   }
-  return new NextAddressError("Request failed", "TRANSPORT_ERROR");
+  return new AnemoneError("Request failed", "TRANSPORT_ERROR");
 }
 
 function mapAddressChangeHoldStatus(parsed: Record<string, unknown>): AddressChangeHoldStatus {
   const hold = parsed.hold;
   if (!isRecord(hold) || typeof hold.id !== "string") {
-    throw new NextAddressError("Response missing hold", "BAD_RESPONSE", undefined, parsed);
+    throw new AnemoneError("Response missing hold", "BAD_RESPONSE", undefined, parsed);
   }
   return {
     id: hold.id,
@@ -403,7 +429,7 @@ function mapArmIntegrationSimulationResponse(
   const status = parsed.status;
   if (status === "applied") {
     if (parsed.scenario !== "security_hold") {
-      throw new NextAddressError("Unexpected applied scenario", "BAD_RESPONSE", undefined, parsed);
+      throw new AnemoneError("Unexpected applied scenario", "BAD_RESPONSE", undefined, parsed);
     }
     return {
       status: "applied",
@@ -413,11 +439,11 @@ function mapArmIntegrationSimulationResponse(
     };
   }
   if (status !== "armed") {
-    throw new NextAddressError("Response missing status", "BAD_RESPONSE", undefined, parsed);
+    throw new AnemoneError("Response missing status", "BAD_RESPONSE", undefined, parsed);
   }
   const scenario = parsed.scenario;
   if (!isIntegrationSimulationScenario(scenario)) {
-    throw new NextAddressError("Response missing scenario", "BAD_RESPONSE", undefined, parsed);
+    throw new AnemoneError("Response missing scenario", "BAD_RESPONSE", undefined, parsed);
   }
   return {
     status: "armed",
@@ -438,11 +464,11 @@ function mapSimulateSecurityEventResponse(
 ): SimulateAddressChangeSecurityEventResponse {
   const status = parsed.status;
   if (status !== "hold_created" && status !== "already_paused") {
-    throw new NextAddressError("Response missing status", "BAD_RESPONSE", undefined, parsed);
+    throw new AnemoneError("Response missing status", "BAD_RESPONSE", undefined, parsed);
   }
   const code = parsed.code;
   if (code !== "address_changes_paused" && code !== "suspicious_ip_hold_created") {
-    throw new NextAddressError("Response missing code", "BAD_RESPONSE", undefined, parsed);
+    throw new AnemoneError("Response missing code", "BAD_RESPONSE", undefined, parsed);
   }
   const message = typeof parsed.message === "string" ? parsed.message : "";
   return {
@@ -453,7 +479,7 @@ function mapSimulateSecurityEventResponse(
   };
 }
 
-function isQueueableContactUpdateError(error: NextAddressError): boolean {
+function isQueueableContactUpdateError(error: AnemoneError): boolean {
   if (error.code === "TIMEOUT" || error.code === "TRANSPORT_ERROR") return true;
   if (error.code === "HTTP_ERROR" && error.status != null && error.status >= 500) return true;
   if (error.code === "HTTP_ERROR" && error.status === 429) return true;

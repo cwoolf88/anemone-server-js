@@ -1,1 +1,1 @@
-export { NextAddressSyncCard, type NextAddressSyncCardProps } from "./NextAddressSyncCard.js";
+export { AnemoneSyncCard, type AnemoneSyncCardProps } from "./AnemoneSyncCard.js";

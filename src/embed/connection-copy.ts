@@ -1,15 +1,21 @@
+import { resolveProductDisplayName } from "../branding.js";
 import type { WidgetConnectionView } from "./types.js";
 
 /** Default primary settings path when signed in without a per-merchant link. */
 export const DEFAULT_PRIMARY_SETTINGS_PATH = "/addresses";
 
-export function connectionSubtitle(view: WidgetConnectionView, tenantName: string): string {
+export function connectionSubtitle(
+  view: WidgetConnectionView,
+  tenantName: string,
+  productName?: string,
+): string {
   const app = tenantName || "your app";
+  const product = resolveProductDisplayName(productName);
   if (view.autoConnected && !view.signedIntoPrimary) {
-    return `${app} matched your NextAddress account by verified email. Sign in to manage your shared profile.`;
+    return `${app} matched your ${product} account by verified email. Sign in to manage your shared profile.`;
   }
   if (view.connected) {
-    return `Contact updates from ${app} sync through your shared NextAddress profile.`;
+    return `Contact updates from ${app} sync through your shared ${product} profile.`;
   }
   if (view.signedIntoPrimary) {
     return `Connect ${app} to keep your address and contact info in sync across partners.`;
@@ -19,22 +25,24 @@ export function connectionSubtitle(view: WidgetConnectionView, tenantName: strin
 
 export function connectionStatusTooltip(
   view: WidgetConnectionView,
-  mockMode: boolean
+  mockMode: boolean,
+  productName?: string,
 ): string {
+  const product = resolveProductDisplayName(productName);
   if (view.statusLoading) {
-    return "Checking connection status with NextAddress…";
+    return `Checking connection status with ${product}…`;
   }
   if (view.connected) {
     if (view.autoConnected && !view.signedIntoPrimary) {
-      return "Auto-connected by verified email. Sign in to manage your NextAddress profile.";
+      return `Auto-connected by verified email. Sign in to manage your ${product} profile.`;
     }
     return mockMode
-      ? "Connected (mock). Changes you save sync to your NextAddress profile."
-      : "Connected. Changes you save in this app sync to your NextAddress profile.";
+      ? `Connected (mock). Changes you save sync to your ${product} profile.`
+      : `Connected. Changes you save in this app sync to your ${product} profile.`;
   }
   return mockMode
     ? "Not connected (mock). Connect to sync contact and address updates."
-    : "Not connected. Connect to send contact and address updates to NextAddress.";
+    : `Not connected. Connect to send contact and address updates to ${product}.`;
 }
 
 export function sessionPollRefreshLabel(phase: "sign-in" | "connect" | null): string {
@@ -44,10 +52,14 @@ export function sessionPollRefreshLabel(phase: "sign-in" | "connect" | null): st
   return "Check sign-in status again";
 }
 
-export function settingsButtonLabel(signedIntoPrimary: boolean): string {
+export function settingsButtonLabel(
+  signedIntoPrimary: boolean,
+  productName?: string,
+): string {
+  const product = resolveProductDisplayName(productName);
   return signedIntoPrimary
-    ? "Manage your addresses in NextAddress"
-    : "Sign in to manage your addresses in NextAddress";
+    ? `Manage your addresses in ${product}`
+    : `Sign in to manage your addresses in ${product}`;
 }
 
 export function disconnectButtonLabel(

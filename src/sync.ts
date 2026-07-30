@@ -1,4 +1,4 @@
-import { NextAddressError } from "./errors.js";
+import { AnemoneError } from "./errors.js";
 import type { ContactSaveResult } from "./types.js";
 
 export type ContactSyncDisplayState =
@@ -13,7 +13,7 @@ export type ContactSyncDisplayState =
       retryable: boolean;
     };
 
-export function isPrimaryClientError(error: NextAddressError): boolean {
+export function isPrimaryClientError(error: AnemoneError): boolean {
   return (
     error.code === "HTTP_ERROR" &&
     error.status != null &&
@@ -22,8 +22,8 @@ export function isPrimaryClientError(error: NextAddressError): boolean {
   );
 }
 
-/** User-facing message from a next-address-primary error body or fallback. */
-export function getPrimaryErrorMessage(error: NextAddressError): string {
+/** User-facing message from a anemone error body or fallback. */
+export function getPrimaryErrorMessage(error: AnemoneError): string {
   const body = error.body;
   if (isRecord(body)) {
     if (typeof body.message === "string" && body.message.length > 0) {
@@ -37,7 +37,7 @@ export function getPrimaryErrorMessage(error: NextAddressError): string {
 }
 
 export function contactSyncStateFromError(error: unknown): ContactSyncDisplayState {
-  if (!(error instanceof NextAddressError)) {
+  if (!(error instanceof AnemoneError)) {
     const message = error instanceof Error ? error.message : "Sync failed";
     return { status: "failed", errorMessage: message, retryable: true };
   }

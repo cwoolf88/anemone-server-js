@@ -1,3 +1,4 @@
+import { resolveProductDisplayName } from "../branding.js";
 import { appendDevWidgetChevron } from "./dev-widget-helpers.js";
 import { formatNetworkJson } from "./network-activity.js";
 import type { NetworkActivityExchange } from "./network-activity.js";
@@ -9,6 +10,8 @@ export type NetworkActivityWidgetView = {
   expanded: boolean;
   sortDirection: NetworkActivitySortDirection;
   selectedExchangeId?: string;
+  /** Product display name. Blank values fall back to "Anemone". */
+  productName?: string;
   onToggleExpanded: () => void;
   onToggleSortDirection: () => void;
   onClear: () => void;
@@ -28,11 +31,11 @@ function el<K extends keyof HTMLElementTagNameMap>(
 }
 
 function statusClass(status: number | undefined, error?: string): string {
-  if (error) return "na-network-console__status na-network-console__status--error";
-  if (status == null) return "na-network-console__status";
-  if (status >= 200 && status < 300) return "na-network-console__status na-network-console__status--ok";
-  if (status >= 400) return "na-network-console__status na-network-console__status--error";
-  return "na-network-console__status na-network-console__status--warn";
+  if (error) return "an-network-console__status an-network-console__status--error";
+  if (status == null) return "an-network-console__status";
+  if (status >= 200 && status < 300) return "an-network-console__status an-network-console__status--ok";
+  if (status >= 400) return "an-network-console__status an-network-console__status--error";
+  return "an-network-console__status an-network-console__status--warn";
 }
 
 function renderBlock(
@@ -40,8 +43,8 @@ function renderBlock(
   className: string,
   content: string,
 ): HTMLDivElement {
-  const block = el("div", "na-network-console__block");
-  block.appendChild(el("p", "na-network-console__block-title", title));
+  const block = el("div", "an-network-console__block");
+  block.appendChild(el("p", "an-network-console__block-title", title));
   const pre = el("pre", className);
   pre.textContent = content || "(empty)";
   block.appendChild(pre);
@@ -87,24 +90,24 @@ function primitiveValue(value: unknown): string {
 function renderTreeValue(value: unknown): HTMLElement {
   const normalized = normalizeTreeValue(value);
   if (!isTreeValue(normalized)) {
-    return el("span", "na-network-console__tree-primitive", primitiveValue(normalized));
+    return el("span", "an-network-console__tree-primitive", primitiveValue(normalized));
   }
 
-  const details = el("details", "na-network-console__tree-details");
-  const summary = el("summary", "na-network-console__tree-summary", treeSummary(normalized));
+  const details = el("details", "an-network-console__tree-details");
+  const summary = el("summary", "an-network-console__tree-summary", treeSummary(normalized));
   details.appendChild(summary);
   details.appendChild(renderTreeTable(normalized));
   return details;
 }
 
 function renderTreeTable(value: Record<string, unknown> | unknown[]): HTMLTableElement {
-  const table = el("table", "na-network-console__tree-table");
+  const table = el("table", "an-network-console__tree-table");
   const tbody = el("tbody");
   const entries = treeEntries(value);
 
   if (entries.length === 0) {
     const row = el("tr");
-    const empty = el("td", "na-network-console__tree-empty", "(empty)");
+    const empty = el("td", "an-network-console__tree-empty", "(empty)");
     empty.colSpan = 2;
     row.appendChild(empty);
     tbody.appendChild(row);
@@ -112,8 +115,8 @@ function renderTreeTable(value: Record<string, unknown> | unknown[]): HTMLTableE
 
   for (const [key, entryValue] of entries) {
     const row = el("tr");
-    row.appendChild(el("th", "na-network-console__tree-key", key));
-    const valueCell = el("td", "na-network-console__tree-value");
+    row.appendChild(el("th", "an-network-console__tree-key", key));
+    const valueCell = el("td", "an-network-console__tree-value");
     valueCell.appendChild(renderTreeValue(entryValue));
     row.appendChild(valueCell);
     tbody.appendChild(row);
@@ -124,9 +127,9 @@ function renderTreeTable(value: Record<string, unknown> | unknown[]): HTMLTableE
 }
 
 function renderTreeBlock(title: string, value: unknown): HTMLDivElement {
-  const block = el("div", "na-network-console__block");
-  block.appendChild(el("p", "na-network-console__block-title", title));
-  const tree = el("div", "na-network-console__tree");
+  const block = el("div", "an-network-console__block");
+  block.appendChild(el("p", "an-network-console__block-title", title));
+  const tree = el("div", "an-network-console__tree");
   const normalized = normalizeTreeValue(value);
   if (isTreeValue(normalized)) {
     tree.appendChild(renderTreeTable(normalized));
@@ -186,9 +189,9 @@ function formatExchangeTimestampTooltip(exchange: NetworkActivityExchange): stri
 function methodClass(method: string): string {
   const normalized = method.trim().toLowerCase();
   if (/^[a-z]+$/.test(normalized)) {
-    return `na-network-console__method--${normalized}`;
+    return `an-network-console__method--${normalized}`;
   }
-  return "na-network-console__method--other";
+  return "an-network-console__method--other";
 }
 
 function findExchange(
@@ -234,21 +237,21 @@ function renderRawExchange(
   exchange: NetworkActivityExchange,
   depth = 0,
 ): HTMLElement {
-  const wrap = el("article", "na-network-console__exchange");
+  const wrap = el("article", "an-network-console__exchange");
   if (depth > 0) {
-    wrap.classList.add("na-network-console__exchange--nested");
-    wrap.style.setProperty("--na-network-depth", String(depth));
+    wrap.classList.add("an-network-console__exchange--nested");
+    wrap.style.setProperty("--an-network-depth", String(depth));
   }
 
-  const head = el("div", "na-network-console__exchange-head");
-  const meta = el("div", "na-network-console__meta");
+  const head = el("div", "an-network-console__exchange-head");
+  const meta = el("div", "an-network-console__meta");
 
-  const label = el("span", "na-network-console__label", exchange.label);
+  const label = el("span", "an-network-console__label", exchange.label);
   meta.appendChild(label);
 
   const verb = el(
     "span",
-    "na-network-console__verb",
+    "an-network-console__verb",
     `${exchange.request.method} ${exchange.request.url}`,
   );
   meta.appendChild(verb);
@@ -265,17 +268,17 @@ function renderRawExchange(
   }
 
   if (exchange.durationMs != null) {
-    meta.appendChild(el("span", "na-network-console__timing", `${exchange.durationMs}ms`));
+    meta.appendChild(el("span", "an-network-console__timing", `${exchange.durationMs}ms`));
   }
 
   head.appendChild(meta);
   wrap.appendChild(head);
 
-  const body = el("div", "na-network-console__exchange-body");
+  const body = el("div", "an-network-console__exchange-body");
   body.appendChild(
     renderBlock(
       "Request",
-      "na-network-console__pre na-network-console__pre--request",
+      "an-network-console__pre an-network-console__pre--request",
       [
         formatNetworkJson(exchange.request.headers),
         formatNetworkJson(exchange.request.body),
@@ -289,7 +292,7 @@ function renderRawExchange(
     body.appendChild(
       renderBlock(
         "Response",
-        "na-network-console__pre na-network-console__pre--response",
+        "an-network-console__pre an-network-console__pre--response",
         [
           formatNetworkJson(exchange.response.headers),
           formatNetworkJson(exchange.response.body),
@@ -300,14 +303,14 @@ function renderRawExchange(
     );
   } else if (exchange.error) {
     body.appendChild(
-      renderBlock("Error", "na-network-console__pre na-network-console__pre--error", exchange.error),
+      renderBlock("Error", "an-network-console__pre an-network-console__pre--error", exchange.error),
     );
   }
 
   wrap.appendChild(body);
 
   if (exchange.children?.length) {
-    const nested = el("div", "na-network-console__children");
+    const nested = el("div", "an-network-console__children");
     for (const child of exchange.children) {
       nested.appendChild(renderRawExchange(child, depth + 1));
     }
@@ -321,26 +324,26 @@ function renderExchangeSummary(
   exchange: NetworkActivityExchange,
   view: NetworkActivityWidgetView,
 ): HTMLElement {
-  const wrap = el("article", "na-network-console__exchange na-network-console__exchange--summary");
-  const details = el("details", "na-network-console__summary-details");
+  const wrap = el("article", "an-network-console__exchange an-network-console__exchange--summary");
+  const details = el("details", "an-network-console__summary-details");
 
-  const head = el("summary", "na-network-console__exchange-head");
-  const meta = el("div", "na-network-console__meta");
+  const head = el("summary", "an-network-console__exchange-head");
+  const meta = el("div", "an-network-console__meta");
   meta.appendChild(
-    el("span", `na-network-console__method ${methodClass(exchange.request.method)}`, exchange.request.method),
+    el("span", `an-network-console__method ${methodClass(exchange.request.method)}`, exchange.request.method),
   );
-  meta.appendChild(el("span", "na-network-console__endpoint", endpointFromUrl(exchange.request.url)));
+  meta.appendChild(el("span", "an-network-console__endpoint", endpointFromUrl(exchange.request.url)));
   meta.appendChild(el("span", statusClass(exchange.response?.status, exchange.error), responseLabel(exchange)));
   const timestamp = formatExchangeTimestamp(exchange);
   if (timestamp) {
-    const timestampEl = el("time", "na-network-console__timestamp", timestamp);
+    const timestampEl = el("time", "an-network-console__timestamp", timestamp);
     timestampEl.title = formatExchangeTimestampTooltip(exchange);
     timestampEl.dateTime = exchange.completedAt ?? exchange.startedAt;
     meta.appendChild(timestampEl);
   }
   head.appendChild(meta);
 
-  const detailBtn = el("button", "na-network-console__details", "View raw data");
+  const detailBtn = el("button", "an-network-console__details", "View raw data");
   detailBtn.type = "button";
   detailBtn.setAttribute("aria-label", `View raw data for ${exchange.request.method} ${exchange.request.url}`);
   detailBtn.addEventListener("click", (event) => {
@@ -350,14 +353,14 @@ function renderExchangeSummary(
   });
   head.appendChild(detailBtn);
   const chevron = appendDevWidgetChevron(head);
-  chevron.classList.add("na-network-console__summary-chevron");
+  chevron.classList.add("an-network-console__summary-chevron");
   details.appendChild(head);
 
-  const body = el("div", "na-network-console__summary-body");
+  const body = el("div", "an-network-console__summary-body");
   body.appendChild(
     renderBlock(
       "Payload",
-      "na-network-console__pre na-network-console__pre--request",
+      "an-network-console__pre an-network-console__pre--request",
       formatNetworkJson(exchange.request.body),
     ),
   );
@@ -365,7 +368,7 @@ function renderExchangeSummary(
     body.appendChild(renderTreeBlock("Response Body", exchange.response.body));
   } else if (exchange.error) {
     body.appendChild(
-      renderBlock("Error", "na-network-console__pre na-network-console__pre--error", exchange.error),
+      renderBlock("Error", "an-network-console__pre an-network-console__pre--error", exchange.error),
     );
   }
   details.appendChild(body);
@@ -378,30 +381,30 @@ function renderDetailsModal(
   exchange: NetworkActivityExchange,
   view: NetworkActivityWidgetView,
 ): HTMLElement {
-  const backdrop = el("div", "na-network-console-modal");
+  const backdrop = el("div", "an-network-console-modal");
   backdrop.setAttribute("role", "presentation");
   backdrop.addEventListener("click", (event) => {
     if (event.target === backdrop) view.onCloseDetails();
   });
 
-  const dialog = el("div", "na-network-console-modal__dialog");
+  const dialog = el("div", "an-network-console-modal__dialog");
   dialog.setAttribute("role", "dialog");
   dialog.setAttribute("aria-modal", "true");
   dialog.setAttribute("aria-label", `Raw network data for ${exchange.label}`);
 
-  const header = el("div", "na-network-console-modal__header");
-  const title = el("div", "na-network-console-modal__title");
-  title.appendChild(el("span", "na-network-console__label", exchange.label));
-  title.appendChild(el("span", "na-network-console__verb", `${exchange.request.method} ${exchange.request.url}`));
+  const header = el("div", "an-network-console-modal__header");
+  const title = el("div", "an-network-console-modal__title");
+  title.appendChild(el("span", "an-network-console__label", exchange.label));
+  title.appendChild(el("span", "an-network-console__verb", `${exchange.request.method} ${exchange.request.url}`));
   header.appendChild(title);
 
-  const closeBtn = el("button", "na-network-console-modal__close", "Close");
+  const closeBtn = el("button", "an-network-console-modal__close", "Close");
   closeBtn.type = "button";
   closeBtn.addEventListener("click", view.onCloseDetails);
   header.appendChild(closeBtn);
   dialog.appendChild(header);
 
-  const consoleEl = el("div", "na-network-console na-network-console--modal");
+  const consoleEl = el("div", "an-network-console an-network-console--modal");
   consoleEl.appendChild(renderRawExchange(exchange));
   dialog.appendChild(consoleEl);
   backdrop.appendChild(dialog);
@@ -412,14 +415,15 @@ export function renderNetworkActivityWidget(
   host: HTMLElement,
   view: NetworkActivityWidgetView,
 ): void {
-  const section = el("section", "na-network-activity na-widget na-dev-widget");
+  const product = resolveProductDisplayName(view.productName);
+  const section = el("section", "an-network-activity an-widget an-dev-widget");
   if (!view.expanded) {
-    section.classList.add("na-dev-widget--collapsed");
+    section.classList.add("an-dev-widget--collapsed");
   }
-  section.setAttribute("aria-label", "NextAddress network activity");
+  section.setAttribute("aria-label", `${product} network activity`);
 
-  const header = el("div", "na-dev-widget__header");
-  const toggleBtn = el("button", "na-dev-widget__toggle", "");
+  const header = el("div", "an-dev-widget__header");
+  const toggleBtn = el("button", "an-dev-widget__toggle", "");
   toggleBtn.type = "button";
   toggleBtn.setAttribute("aria-expanded", view.expanded ? "true" : "false");
   toggleBtn.setAttribute(
@@ -428,21 +432,21 @@ export function renderNetworkActivityWidget(
   );
   toggleBtn.addEventListener("click", view.onToggleExpanded);
 
-  const toggleCopy = el("span", "na-dev-widget__toggle-copy");
-  toggleCopy.appendChild(el("h3", "na-dev-widget__title", "Network activity"));
-  toggleCopy.appendChild(el("span", "na-dev-widget__badge na-dev-widget__badge--amber", "Dev only"));
+  const toggleCopy = el("span", "an-dev-widget__toggle-copy");
+  toggleCopy.appendChild(el("h3", "an-dev-widget__title", "Network activity"));
+  toggleCopy.appendChild(el("span", "an-dev-widget__badge an-dev-widget__badge--amber", "Dev only"));
   if (view.exchanges.length > 0) {
     const requestCount = flattenExchanges(view.exchanges).length;
     const countLabel =
       requestCount === 1 ? "1 request" : `${requestCount} requests`;
-    toggleCopy.appendChild(el("span", "na-dev-widget__count", countLabel));
+    toggleCopy.appendChild(el("span", "an-dev-widget__count", countLabel));
   }
   toggleBtn.appendChild(toggleCopy);
   appendDevWidgetChevron(toggleBtn);
   header.appendChild(toggleBtn);
   section.appendChild(header);
 
-  const body = el("div", "na-dev-widget__body");
+  const body = el("div", "an-dev-widget__body");
   if (!view.expanded) {
     body.hidden = true;
   }
@@ -450,15 +454,15 @@ export function renderNetworkActivityWidget(
   body.appendChild(
     el(
       "p",
-      "na-dev-widget__subtitle",
+      "an-dev-widget__subtitle",
       "Integration requests and responses, grouped with downstream primary API calls.",
     ),
   );
 
-  const toolbar = el("div", "na-network-activity__toolbar");
+  const toolbar = el("div", "an-network-activity__toolbar");
   const sortBtn = el(
     "button",
-    "na-network-activity__sort",
+    "an-network-activity__sort",
     view.sortDirection === "newest" ? "Newest first" : "Oldest first",
   );
   sortBtn.type = "button";
@@ -471,13 +475,13 @@ export function renderNetworkActivityWidget(
   sortBtn.addEventListener("click", view.onToggleSortDirection);
   toolbar.appendChild(sortBtn);
 
-  const clearBtn = el("button", "na-network-activity__clear", "Clear log");
+  const clearBtn = el("button", "an-network-activity__clear", "Clear log");
   clearBtn.type = "button";
   clearBtn.addEventListener("click", view.onClear);
   toolbar.appendChild(clearBtn);
   body.appendChild(toolbar);
 
-  const consoleEl = el("div", "na-network-console");
+  const consoleEl = el("div", "an-network-console");
   consoleEl.setAttribute("role", "log");
   consoleEl.setAttribute("aria-live", "polite");
   consoleEl.setAttribute("aria-relevant", "additions");
@@ -486,7 +490,7 @@ export function renderNetworkActivityWidget(
     consoleEl.appendChild(
       el(
         "p",
-        "na-network-console__empty",
+        "an-network-console__empty",
         "No network activity yet. Connect, save contact info, or run a simulation to populate the log.",
       ),
     );

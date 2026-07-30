@@ -5,6 +5,8 @@ import {
 } from "./primary-session.js";
 
 export type SessionPollOptions = {
+  /** Product display name used by the hidden session-check iframe. */
+  productName?: string;
   /** Delay between probes. Default 1500ms. */
   intervalMs?: number;
   /** Stop after this duration. Default 120000ms. */
@@ -41,7 +43,7 @@ export async function pollPrimaryClerkSessionUntil(
     const session = await probePrimaryClerkSession(
       primaryBaseUrl,
       connectExternalUserId,
-      { force: true }
+      { force: true, productName: options?.productName }
     );
     await options?.onUpdate?.(session);
     if (predicate(session)) {

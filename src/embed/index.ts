@@ -20,29 +20,29 @@ export {
   canConnectAccount,
   canDisconnect,
   canOpenSettings,
-  createNextAddressIntegration,
+  createAnemoneIntegration,
   getSettingsUrl,
   shouldShowSessionPollRefresh,
 } from "./integration.js";
-export { createNextAddressWidget } from "./widget.js";
+export { createAnemoneWidget } from "./widget.js";
 export { renderSyncBlock } from "./widget-render.js";
 export type { SyncWidgetActions } from "./widget-render.js";
-export { createNextAddressSimulationWidget } from "./simulation-widget.js";
-export { createNextAddressNetworkActivityWidget } from "./network-activity-widget.js";
+export { createAnemoneSimulationWidget } from "./simulation-widget.js";
+export { createAnemoneNetworkActivityWidget } from "./network-activity-widget.js";
 export type {
-  NextAddressNetworkActivityWidgetHandle,
-  NextAddressNetworkActivityWidgetOptions,
+  AnemoneNetworkActivityWidgetHandle,
+  AnemoneNetworkActivityWidgetOptions,
 } from "./network-activity-widget.js";
 export {
-  enableNextAddressDebugMode,
-  disableNextAddressDebugMode,
-  isNextAddressDebugModeEnabled,
-  subscribeNextAddressDebugMode,
+  enableAnemoneDebugMode,
+  disableAnemoneDebugMode,
+  isAnemoneDebugModeEnabled,
+  subscribeAnemoneDebugMode,
 } from "./dev-debug.js";
 export {
-  createNextAddressDevToolsLauncher,
-  type NextAddressDevToolsLauncherHandle,
-  type NextAddressDevToolsLauncherOptions,
+  createAnemoneDevToolsLauncher,
+  type AnemoneDevToolsLauncherHandle,
+  type AnemoneDevToolsLauncherOptions,
 } from "./dev-tools-launcher.js";
 export { loggedFetch } from "./logged-fetch.js";
 export {
@@ -72,9 +72,9 @@ export type {
   NetworkActivityResponse,
 } from "./network-activity.js";
 export type {
-  NextAddressSimulationActions,
-  NextAddressSimulationWidgetHandle,
-  NextAddressSimulationWidgetOptions,
+  AnemoneSimulationActions,
+  AnemoneSimulationWidgetHandle,
+  AnemoneSimulationWidgetOptions,
 } from "./simulation-widget.js";
 export {
   SCENARIO_CATEGORY_LABELS,
@@ -107,7 +107,7 @@ export {
   type SessionPollOptions,
 } from "./session-poll.js";
 export {
-  NEXTADDRESS_BRIDGE_COMPLETE,
+  ANEMONE_BRIDGE_COMPLETE,
   isPrimarySignInUrl,
   openPrimarySettingsTab,
   openPrimarySignInPopup,
@@ -122,12 +122,12 @@ export type {
   ArmIntegrationSimulationResponse,
   IntegrationSimulationScenario,
   SimulateFailedAddressUpdateResponse,
-  NextAddressIntegrationHandle,
-  NextAddressIntegrationOptions,
-  NextAddressIntegrationState,
+  AnemoneIntegrationHandle,
+  AnemoneIntegrationOptions,
+  AnemoneIntegrationState,
   SessionPollState,
-  NextAddressWidgetHandle,
-  NextAddressWidgetOptions,
+  AnemoneWidgetHandle,
+  AnemoneWidgetOptions,
   TenantConnectionInfo,
   WidgetConnectionView,
 } from "./types.js";

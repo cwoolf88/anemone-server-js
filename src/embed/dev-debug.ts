@@ -17,24 +17,24 @@ function isDevelopmentEnvironment(): boolean {
   return false;
 }
 
-/** Turn on NextAddress embed dev tools in non-development builds. */
-export function enableNextAddressDebugMode(): void {
+/** Turn on Anemone embed dev tools in non-development builds. */
+export function enableAnemoneDebugMode(): void {
   manualDebugEnabled = true;
   notifyDebugListeners();
 }
 
-/** Turn off manually enabled NextAddress embed dev tools. */
-export function disableNextAddressDebugMode(): void {
+/** Turn off manually enabled Anemone embed dev tools. */
+export function disableAnemoneDebugMode(): void {
   manualDebugEnabled = false;
   notifyDebugListeners();
 }
 
-/** True in development or after {@link enableNextAddressDebugMode}. */
-export function isNextAddressDebugModeEnabled(): boolean {
+/** True in development or after {@link enableAnemoneDebugMode}. */
+export function isAnemoneDebugModeEnabled(): boolean {
   return manualDebugEnabled || isDevelopmentEnvironment();
 }
 
-export function subscribeNextAddressDebugMode(listener: DebugListener): () => void {
+export function subscribeAnemoneDebugMode(listener: DebugListener): () => void {
   listeners.add(listener);
   return () => listeners.delete(listener);
 }

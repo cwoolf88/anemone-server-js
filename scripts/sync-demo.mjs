@@ -27,5 +27,5 @@ console.log("Syncing SDK into demo at:", demoRoot);
 execSync("npm run sdk:sync:local", {
   cwd: demoRoot,
   stdio: "inherit",
-  env: { ...process.env, LOCAL_NEXT_ADDRESS_SERVER_JS: sdkRoot },
+  env: { ...process.env, LOCAL_ANEMONE_SERVER_JS: sdkRoot },
 });

@@ -39,9 +39,23 @@ export type {
   VerifiedWebhookPayload,
 } from "./types.js";
 
-export { NextAddressClient, type NextAddressClientOptions } from "./client.js";
+export { AnemoneClient, type AnemoneClientOptions } from "./client.js";
 export {
-  NextAddressError,
+  buildContactUpdateFromMerchant,
+  mapContactEventToMerchant,
+  mapMerchantContactToPrimary,
+  mapPrimaryContactToMerchant,
+  primaryContactFieldsFromEvent,
+  type BuildContactUpdateFromMerchantInput,
+  type ContactInfoMapping,
+  type ContactPropertyRenameMap,
+  type AnemoneAddressField,
+  type AnemoneContactPath,
+  type AnemoneScalarContactField,
+  type PrimaryContactFields,
+} from "./contact-mapping.js";
+export {
+  AnemoneError,
   WebhookVerificationError,
 } from "./errors.js";
 export {
@@ -87,3 +101,11 @@ export {
   scenariosForCategory,
   type IntegrationSimulationCategory,
 } from "./simulation-scenarios.js";
+
+export {
+  DEFAULT_PRODUCT_DISPLAY_NAME,
+  contactSyncDisplayCopy,
+  productDisplayInitials,
+  resolveProductDisplayName,
+  type ContactSyncDisplayCopy,
+} from "./branding.js";

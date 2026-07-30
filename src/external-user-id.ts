@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-/** Opaque link token prefix (NextAddress external user id, version 1). */
-export const EXTERNAL_USER_ID_PREFIX = "naeu1";
+/** Opaque link token prefix (Anemone external user id, version 1). */
+export const EXTERNAL_USER_ID_PREFIX = "aneu1";
 
 export type DecodedExternalUserId = {
   tenantId: string;
@@ -24,9 +24,9 @@ function base64UrlDecode(value: string): Buffer {
   return Buffer.from(value, "base64url");
 }
 
-function signPayload(payloadB64: string, signingSecret: string): Buffer {
+function signPayload(prefix: string, payloadB64: string, signingSecret: string): Buffer {
   return createHmac("sha256", signingSecret)
-    .update(`${EXTERNAL_USER_ID_PREFIX}.${payloadB64}`)
+    .update(`${prefix}.${payloadB64}`)
     .digest();
 }
 
@@ -50,7 +50,9 @@ export function encodeExternalUserId(
   const payloadB64 = base64UrlEncode(
     JSON.stringify({ p: apiKeyPrefix, u: userId }),
   );
-  const sigB64 = base64UrlEncode(signPayload(payloadB64, signingSecret.trim()));
+  const sigB64 = base64UrlEncode(
+    signPayload(EXTERNAL_USER_ID_PREFIX, payloadB64, signingSecret.trim()),
+  );
   return `${EXTERNAL_USER_ID_PREFIX}.${apiKeyPrefix}.${payloadB64}.${sigB64}`;
 }
 
@@ -99,7 +101,8 @@ export async function decodeExternalUserId(
   }
 
   const parts = trimmed.split(".");
-  if (parts.length < 3 || parts[0] !== EXTERNAL_USER_ID_PREFIX) {
+  const prefix = parts[0];
+  if (parts.length < 3 || prefix !== EXTERNAL_USER_ID_PREFIX) {
     throw new Error("Malformed external_user_id token");
   }
 
@@ -133,7 +136,7 @@ export async function decodeExternalUserId(
     throw new Error("No signing secret configured for tenant");
   }
 
-  const expected = signPayload(payloadB64, secret.trim());
+  const expected = signPayload(prefix!, payloadB64, secret.trim());
   let actual: Buffer;
   try {
     actual = base64UrlDecode(sigB64);

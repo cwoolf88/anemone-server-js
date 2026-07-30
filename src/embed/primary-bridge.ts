@@ -1,7 +1,9 @@
-/** Posted from the host app's bridge-return page when a popup/iframe flow finishes. */
-export const NEXTADDRESS_BRIDGE_COMPLETE = "next-address-bridge-complete";
+import { resolveProductDisplayName } from "../branding.js";
 
-const POPUP_NAME = "nextaddress-bridge";
+/** Posted from the host app's bridge-return page when a popup/iframe flow finishes. */
+export const ANEMONE_BRIDGE_COMPLETE = "anemone-bridge-complete";
+
+const POPUP_NAME = "anemone-bridge";
 const POPUP_FEATURES = "width=520,height=720";
 const HIDDEN_FRAME_TIMEOUT_MS = 30_000;
 
@@ -56,7 +58,7 @@ function openPrimaryPopup(
   function onMessage(event: MessageEvent) {
     if (event.origin !== hostOrigin) return;
     const data = event.data as { type?: string } | null;
-    if (data?.type !== NEXTADDRESS_BRIDGE_COMPLETE) return;
+    if (data?.type !== ANEMONE_BRIDGE_COMPLETE) return;
     void finish();
   }
 
@@ -68,8 +70,8 @@ function openPrimaryPopup(
 }
 
 /**
- * Opens NextAddress sign-in in a popup. The host page stays put; the popup should
- * finish on a bridge-return URL that posts {@link NEXTADDRESS_BRIDGE_COMPLETE}.
+ * Opens product sign-in in a popup. The host page stays put; the popup should
+ * finish on a bridge-return URL that posts {@link ANEMONE_BRIDGE_COMPLETE}.
  */
 export function openPrimarySignInPopup(
   url: string,
@@ -96,11 +98,12 @@ export function openPrimarySettingsTab(url: string): void {
 /** Runs connect/disconnect on primary in a hidden iframe; host page stays put. */
 export function runPrimaryBridgeInHiddenFrame(
   url: string,
-  onComplete: () => void | Promise<void>
+  onComplete: () => void | Promise<void>,
+  productName?: string,
 ): void {
   const iframe = document.createElement("iframe");
   iframe.hidden = true;
-  iframe.title = "NextAddress account connection";
+  iframe.title = `${resolveProductDisplayName(productName)} account connection`;
 
   let done = false;
   const hostOrigin = window.location.origin;
@@ -122,7 +125,7 @@ export function runPrimaryBridgeInHiddenFrame(
   function onMessage(event: MessageEvent) {
     if (event.origin !== hostOrigin) return;
     const data = event.data as { type?: string } | null;
-    if (data?.type !== NEXTADDRESS_BRIDGE_COMPLETE) return;
+    if (data?.type !== ANEMONE_BRIDGE_COMPLETE) return;
     void finish();
   }
 
@@ -133,20 +136,21 @@ export function runPrimaryBridgeInHiddenFrame(
 
 export type PrimaryBridgeRunner = (
   url: string,
-  onComplete: () => void | Promise<void>
+  onComplete: () => void | Promise<void>,
+  productName?: string,
 ) => void;
 
 /**
  * Sign-in opens a popup (never navigates the host). Connect/disconnect use a
  * hidden iframe when no custom navigator is supplied.
  */
-export const runPrimaryBridge: PrimaryBridgeRunner = (url, onComplete) => {
+export const runPrimaryBridge: PrimaryBridgeRunner = (url, onComplete, productName) => {
   if (isPrimarySignInUrl(url)) {
     openPrimarySignInPopup(url, onComplete);
     return;
   }
   if (isPrimaryConnectOrDisconnectUrl(url)) {
-    runPrimaryBridgeInHiddenFrame(url, onComplete);
+    runPrimaryBridgeInHiddenFrame(url, onComplete, productName);
     return;
   }
   openPrimarySettingsTab(url);

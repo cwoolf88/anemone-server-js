@@ -1,7 +1,7 @@
 {
-  "name": "next-address-server-js",
+  "name": "anemone-server-js",
   "version": "0.1.0",
-  "description": "Secure server-side SDK for integrating with next-address-primary (REST + webhooks).",
+  "description": "Secure server-side SDK for integrating with Anemone (REST + webhooks).",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -42,14 +42,15 @@
     "typecheck": "tsc --noEmit"
   },
   "keywords": [
-    "next-address",
+    "anemone",
+    "anemone",
     "webhook",
     "address",
     "contacts"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/next-address-server-js.git"
+    "url": "https://github.com/cwoolf88/anemone-server-js.git"
   },
   "devDependencies": {
     "@types/node": "^22.9.0",

@@ -1,4 +1,4 @@
-export class NextAddressError extends Error {
+export class AnemoneError extends Error {
   constructor(
     message: string,
     readonly code: string,
@@ -6,11 +6,11 @@ export class NextAddressError extends Error {
     readonly body?: unknown
   ) {
     super(message);
-    this.name = "NextAddressError";
+    this.name = "AnemoneError";
   }
 }
 
-export class WebhookVerificationError extends NextAddressError {
+export class WebhookVerificationError extends AnemoneError {
   constructor(message: string, code: string = "WEBHOOK_VERIFICATION_FAILED") {
     super(message, code);
     this.name = "WebhookVerificationError";

@@ -1,11 +1,13 @@
-/** Dev/test scenarios for address updates and NextAddress connection flows. */
+import { resolveProductDisplayName } from "./branding.js";
+
+/** Dev/test scenarios for address updates and product connection flows. */
 export const INTEGRATION_SIMULATION_SCENARIOS = [
   "security_hold",
   "invalid_address",
   "invalid_address_format",
   "required_address_fields_missing",
   "sync_failure_merchant",
-  "sync_failure_nextaddress",
+  "sync_failure_anemone",
   "network_error",
   "server_unreachable",
   "connection_fetch_failure",
@@ -35,7 +37,7 @@ export function scenarioCategory(
     case "required_address_fields_missing":
       return "validation";
     case "sync_failure_merchant":
-    case "sync_failure_nextaddress":
+    case "sync_failure_anemone":
       return "sync";
     default:
       return "connection";
@@ -62,7 +64,11 @@ export function scenariosForCategory(
   return INTEGRATION_SIMULATION_SCENARIOS.filter((s) => scenarioCategory(s) === category);
 }
 
-export function scenarioLabel(scenario: IntegrationSimulationScenario): string {
+export function scenarioLabel(
+  scenario: IntegrationSimulationScenario,
+  productName?: string,
+): string {
+  const product = resolveProductDisplayName(productName);
   switch (scenario) {
     case "security_hold":
       return "24-hour security hold";
@@ -74,8 +80,8 @@ export function scenarioLabel(scenario: IntegrationSimulationScenario): string {
       return "Required fields missing";
     case "sync_failure_merchant":
       return "Merchant sync failure";
-    case "sync_failure_nextaddress":
-      return "NextAddress push failure";
+    case "sync_failure_anemone":
+      return `${product} push failure`;
     case "network_error":
       return "Network error";
     case "server_unreachable":
@@ -85,30 +91,38 @@ export function scenarioLabel(scenario: IntegrationSimulationScenario): string {
   }
 }
 
-export function scenarioDescription(scenario: IntegrationSimulationScenario): string {
+export function scenarioDescription(
+  scenario: IntegrationSimulationScenario,
+  productName?: string,
+): string {
+  const product = resolveProductDisplayName(productName);
   switch (scenario) {
     case "security_hold":
       return "Pause address changes for 24 hours and require Clerk email verification.";
     case "invalid_address":
-      return "NextAddress rejects the address as undeliverable or unknown.";
+      return `${product} rejects the address as undeliverable or unknown.`;
     case "invalid_address_format":
-      return "NextAddress rejects the payload because fields fail format rules.";
+      return `${product} rejects the payload because fields fail format rules.`;
     case "required_address_fields_missing":
       return "Required address properties are null, undefined, or empty.";
     case "sync_failure_merchant":
-      return "Merchant → NextAddress PATCH fails on the next save.";
-    case "sync_failure_nextaddress":
-      return "NextAddress → merchant webhook push fails on the next outbound sync.";
+      return `Merchant → ${product} PATCH fails on the next save.`;
+    case "sync_failure_anemone":
+      return `${product} → merchant webhook push fails on the next outbound sync.`;
     case "network_error":
       return "Simulate a transport timeout or dropped connection.";
     case "server_unreachable":
-      return "Simulate NextAddress returning HTTP 503 or being offline.";
+      return `Simulate ${product} returning HTTP 503 or being offline.`;
     case "connection_fetch_failure":
       return "Loading connection URLs from your backend fails on the next refresh.";
   }
 }
 
-export function scenarioArmHint(scenario: IntegrationSimulationScenario): string {
+export function scenarioArmHint(
+  scenario: IntegrationSimulationScenario,
+  productName?: string,
+): string {
+  const product = resolveProductDisplayName(productName);
   switch (scenario) {
     case "security_hold":
       return "Applied immediately on primary.";
@@ -119,10 +133,10 @@ export function scenarioArmHint(scenario: IntegrationSimulationScenario): string
     case "network_error":
     case "server_unreachable":
       return "Save contact info in your app to trigger.";
-    case "sync_failure_nextaddress":
-      return "Push an address from NextAddress to your app to trigger.";
+    case "sync_failure_anemone":
+      return `Push an address from ${product} to your app to trigger.`;
     case "connection_fetch_failure":
-      return "Refresh the NextAddress widget or reload connection info to trigger.";
+      return `Refresh the ${product} widget or reload connection info to trigger.`;
   }
 }
 

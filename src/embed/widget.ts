@@ -1,34 +1,34 @@
 import { injectWidgetStyles } from "./widget-styles.js";
 import { renderWidget } from "./widget-render.js";
-import { createNextAddressIntegration } from "./integration.js";
+import { createAnemoneIntegration } from "./integration.js";
 import {
   applyWidgetPalette,
   clearWidgetPalette,
   resolveWidgetPalette,
 } from "./themes.js";
 import type {
-  NextAddressWidgetHandle,
-  NextAddressWidgetOptions,
+  AnemoneWidgetHandle,
+  AnemoneWidgetOptions,
 } from "./types.js";
 
 function resolveMount(mount: HTMLElement | string): HTMLElement {
   if (typeof mount !== "string") return mount;
   const el = document.querySelector<HTMLElement>(mount);
   if (!el) {
-    throw new Error(`NextAddress widget mount not found: ${mount}`);
+    throw new Error(`Anemone widget mount not found: ${mount}`);
   }
   return el;
 }
 
 /**
- * Packaged NextAddress account widget with optional in-widget contact sync status.
- * For custom UIs, use {@link createNextAddressIntegration} with {@link renderSyncBlock}.
+ * Packaged Anemone account widget with optional in-widget contact sync status.
+ * For custom UIs, use {@link createAnemoneIntegration} with {@link renderSyncBlock}.
  */
-export function createNextAddressWidget(
-  options: NextAddressWidgetOptions
-): NextAddressWidgetHandle {
+export function createAnemoneWidget(
+  options: AnemoneWidgetOptions
+): AnemoneWidgetHandle {
   if (typeof document === "undefined") {
-    throw new Error("createNextAddressWidget requires a browser DOM");
+    throw new Error("createAnemoneWidget requires a browser DOM");
   }
 
   if (options.injectStyles !== false) {
@@ -36,14 +36,15 @@ export function createNextAddressWidget(
   }
 
   const container = resolveMount(options.mount);
-  container.classList.add("na-widget-host");
+  container.classList.add("an-widget-host");
   const palette = resolveWidgetPalette(options.theme);
   applyWidgetPalette(container, palette);
 
-  let integration!: ReturnType<typeof createNextAddressIntegration>;
+  let integration!: ReturnType<typeof createAnemoneIntegration>;
 
   function paint(): void {
-    const { connection, sync, syncBusy, tenantName, sessionPoll } = integration.getState();
+    const { connection, sync, syncBusy, tenantName, productName, sessionPoll } =
+      integration.getState();
     renderWidget(
       container,
       connection,
@@ -59,13 +60,15 @@ export function createNextAddressWidget(
         onRetry: options.sync ? () => void integration.sync() : undefined,
         retryDisabled: syncBusy,
       },
-      sessionPoll
+      sessionPoll,
+      productName,
     );
   }
 
-  integration = createNextAddressIntegration({
+  integration = createAnemoneIntegration({
     fetchConnection: options.fetchConnection,
     tenantName: options.tenantName,
+    productName: options.productName,
     sync: options.sync,
     visibilityRefreshMs: options.visibilityRefreshMs,
     navigateToPrimary: options.navigateToPrimary,
@@ -82,7 +85,7 @@ export function createNextAddressWidget(
       integration.destroy();
       container.replaceChildren();
       clearWidgetPalette(container);
-      container.classList.remove("na-widget-host");
+      container.classList.remove("an-widget-host");
     },
   };
 }

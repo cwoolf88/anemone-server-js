@@ -1,3 +1,5 @@
+import { resolveProductDisplayName } from "../branding.js";
+
 export type PrimarySession = {
   signedIn: boolean;
   email: string | null;
@@ -18,7 +20,7 @@ export function primarySessionMatchesTenant(
   return !!actual && actual === expected;
 }
 
-const PRIMARY_SESSION_MESSAGE = "next-address-primary-session";
+const PRIMARY_SESSION_MESSAGE = "anemone-session";
 const PROBE_TIMEOUT_MS = 8_000;
 const CACHE_TTL_MS = 30_000;
 
@@ -57,6 +59,7 @@ export function invalidatePrimarySessionCache(): void {
 function probeOnce(
   primaryBaseUrl: string,
   connectExternalUserId: string,
+  productName?: string,
 ): Promise<PrimarySession> {
   const base = primaryBaseUrl.replace(/\/$/, "");
   const origin = primaryOrigin(base);
@@ -70,7 +73,7 @@ function probeOnce(
 
     const iframe = document.createElement("iframe");
     iframe.hidden = true;
-    iframe.title = "NextAddress session check";
+    iframe.title = `${resolveProductDisplayName(productName)} session check`;
 
     let settled = false;
     const timeout = window.setTimeout(finish, PROBE_TIMEOUT_MS);
@@ -121,7 +124,7 @@ function probeOnce(
 export function probePrimaryClerkSession(
   primaryBaseUrl: string,
   connectExternalUserId: string,
-  options?: { force?: boolean },
+  options?: { force?: boolean; productName?: string },
 ): Promise<PrimarySession> {
   const base = primaryBaseUrl.replace(/\/$/, "");
   const key = cacheKey(base, connectExternalUserId);
@@ -133,7 +136,7 @@ export function probePrimaryClerkSession(
   }
 
   inFlightKey = key;
-  inFlight = probeOnce(base, connectExternalUserId)
+  inFlight = probeOnce(base, connectExternalUserId, options?.productName)
     .then((result) => {
       writeCache(key, result);
       return result;

@@ -3,6 +3,7 @@ import {
   contactSyncStateFromSaveResult,
   type ContactSyncDisplayState,
 } from "../sync.js";
+import { resolveProductDisplayName } from "../branding.js";
 import type {
   AddressChangeHoldStatus,
   AddressUpdateFailureSource,
@@ -25,9 +26,9 @@ import {
 } from "./primary-session.js";
 import { pollPrimaryClerkSessionUntil } from "./session-poll.js";
 import type {
-  NextAddressIntegrationHandle,
-  NextAddressIntegrationOptions,
-  NextAddressIntegrationState,
+  AnemoneIntegrationHandle,
+  AnemoneIntegrationOptions,
+  AnemoneIntegrationState,
   SessionPollState,
   TenantConnectionInfo,
   WidgetConnectionView,
@@ -135,17 +136,18 @@ export function shouldShowSessionPollRefresh(
 }
 
 /**
- * Headless NextAddress connection + sync controller for custom integration UIs.
- * Mirrors {@link createNextAddressWidget} behavior without rendering DOM.
+ * Headless product connection + sync controller for custom integration UIs.
+ * Mirrors {@link createAnemoneWidget} behavior without rendering DOM.
  */
-export function createNextAddressIntegration(
-  options: NextAddressIntegrationOptions
-): NextAddressIntegrationHandle {
+export function createAnemoneIntegration(
+  options: AnemoneIntegrationOptions
+): AnemoneIntegrationHandle {
   if (typeof document === "undefined") {
-    throw new Error("createNextAddressIntegration requires a browser DOM");
+    throw new Error("createAnemoneIntegration requires a browser DOM");
   }
 
   const tenantName = options.tenantName ?? "your app";
+  const productName = resolveProductDisplayName(options.productName);
   const visibilityRefreshMs = options.visibilityRefreshMs ?? DEFAULT_VISIBILITY_REFRESH_MS;
 
   let connectionView = initialConnectionView();
@@ -159,12 +161,13 @@ export function createNextAddressIntegration(
   let connectFlowId = 0;
   let addressChangeHold: AddressChangeHoldStatus | null = null;
 
-  function state(): NextAddressIntegrationState {
+  function state(): AnemoneIntegrationState {
     return {
       connection: { ...connectionView },
       sync: syncState,
       syncBusy,
       tenantName,
+      productName,
       sessionPoll: { ...sessionPoll },
       addressChangeHold,
     };
@@ -202,7 +205,7 @@ export function createNextAddressIntegration(
       const status = await probePrimaryClerkSession(
         connection.primaryBaseUrl,
         resolveConnectToken(connection),
-        { force }
+        { force, productName }
       );
       connectionView = {
         ...connectionView,
@@ -238,7 +241,10 @@ export function createNextAddressIntegration(
     } catch (e) {
       connectionView = {
         loading: false,
-        error: e instanceof Error ? e.message : "Could not load NextAddress connection info.",
+        error:
+          e instanceof Error
+            ? e.message
+            : `Could not load ${productName} connection info.`,
         info: null,
         connected: false,
         autoConnected: false,
@@ -281,7 +287,7 @@ export function createNextAddressIntegration(
       options.navigateToPrimary(url, done);
       return;
     }
-    runPrimaryBridge(url, done);
+    runPrimaryBridge(url, done, productName);
   }
 
   function runConnectBridge(
@@ -296,7 +302,7 @@ export function createNextAddressIntegration(
       options.navigateToPrimary(connectUrl, done);
       return;
     }
-    runPrimaryBridgeInHiddenFrame(connectUrl, done);
+    runPrimaryBridgeInHiddenFrame(connectUrl, done, productName);
   }
 
   function openSignInBridge(signInUrl: string, onComplete?: () => void | Promise<void>): void {
@@ -324,6 +330,7 @@ export function createNextAddressIntegration(
       resolveConnectToken(connection),
       (status) => sessionMatchesTenant(status, connection),
       {
+        productName,
         intervalMs: CONNECT_POLL_INTERVAL_MS,
         timeoutMs: SIGN_IN_POLL_TIMEOUT_MS,
         onUpdate: applySessionStatus,
@@ -352,6 +359,7 @@ export function createNextAddressIntegration(
       resolveConnectToken(connection),
       (status) => sessionMatchesTenant(status, connection) && status.connected,
       {
+        productName,
         intervalMs: CONNECT_POLL_INTERVAL_MS,
         timeoutMs: CONNECT_POLL_TIMEOUT_MS,
         onUpdate: applySessionStatus,
@@ -514,7 +522,7 @@ export function createNextAddressIntegration(
     source: AddressUpdateFailureSource,
   ): Promise<SimulateFailedAddressUpdateResponse | null> {
     const scenario =
-      source === "merchant" ? "sync_failure_merchant" : "sync_failure_nextaddress";
+      source === "merchant" ? "sync_failure_merchant" : "sync_failure_anemone";
     const arm = resolveArmScenario();
     if (arm) {
       const result = await armSimulationScenario(scenario);
@@ -572,7 +580,7 @@ export function createNextAddressIntegration(
   }
 
   document.addEventListener("visibilitychange", onVisibilityChange);
-  // Defer so callers (e.g. createNextAddressWidget onChange) can finish assigning the handle first.
+  // Defer so callers (e.g. createAnemoneWidget onChange) can finish assigning the handle first.
   queueMicrotask(() => void refresh());
 
   return {

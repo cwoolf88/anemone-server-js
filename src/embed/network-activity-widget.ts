@@ -1,9 +1,10 @@
+import { resolveProductDisplayName } from "../branding.js";
 import { injectWidgetStyles } from "./widget-styles.js";
 import { NetworkActivityLog } from "./network-activity.js";
 import { renderNetworkActivityWidget } from "./network-activity-widget-render.js";
 import type { NetworkActivitySortDirection } from "./network-activity-widget-render.js";
 
-export type NextAddressNetworkActivityWidgetOptions = {
+export type AnemoneNetworkActivityWidgetOptions = {
   mount: HTMLElement | string;
   /** Shared log instance — create one and pass to {@link createLoggedFetch} helpers in your app. */
   log?: NetworkActivityLog;
@@ -11,9 +12,11 @@ export type NextAddressNetworkActivityWidgetOptions = {
   maxEntries?: number;
   /** Whether the console body is visible. Default false (collapsed). */
   defaultExpanded?: boolean;
+  /** Product display name. Blank values fall back to "Anemone". */
+  productName?: string;
 };
 
-export type NextAddressNetworkActivityWidgetHandle = {
+export type AnemoneNetworkActivityWidgetHandle = {
   getLog(): NetworkActivityLog;
   isExpanded(): boolean;
   setExpanded(expanded: boolean): void;
@@ -26,7 +29,7 @@ function resolveMount(mount: HTMLElement | string): HTMLElement {
   if (typeof mount !== "string") return mount;
   const el = document.querySelector<HTMLElement>(mount);
   if (!el) {
-    throw new Error(`NextAddress network activity widget mount not found: ${mount}`);
+    throw new Error(`Anemone network activity widget mount not found: ${mount}`);
   }
   return el;
 }
@@ -40,7 +43,7 @@ function countExchanges(exchanges: ReturnType<NetworkActivityLog["getExchanges"]
 
 function scrollNetworkActivityToBottom(container: HTMLElement): void {
   const scrollTargets = container.querySelectorAll<HTMLElement>(
-    ".na-network-activity .na-dev-widget__body, .na-network-console",
+    ".an-network-activity .an-dev-widget__body, .an-network-console",
   );
   for (const target of scrollTargets) {
     target.scrollTop = target.scrollHeight;
@@ -50,11 +53,11 @@ function scrollNetworkActivityToBottom(container: HTMLElement): void {
 /**
  * Dev console for viewing grouped integration HTTP exchanges (request + response JSON).
  */
-export function createNextAddressNetworkActivityWidget(
-  options: NextAddressNetworkActivityWidgetOptions,
-): NextAddressNetworkActivityWidgetHandle {
+export function createAnemoneNetworkActivityWidget(
+  options: AnemoneNetworkActivityWidgetOptions,
+): AnemoneNetworkActivityWidgetHandle {
   if (typeof document === "undefined") {
-    throw new Error("createNextAddressNetworkActivityWidget requires a browser DOM");
+    throw new Error("createAnemoneNetworkActivityWidget requires a browser DOM");
   }
 
   if (options.injectStyles !== false) {
@@ -63,14 +66,15 @@ export function createNextAddressNetworkActivityWidget(
 
   const log = options.log ?? new NetworkActivityLog();
   const container = resolveMount(options.mount);
-  container.classList.add("na-widget-host", "na-network-activity-host");
+  container.classList.add("an-widget-host", "an-network-activity-host");
+  const productName = resolveProductDisplayName(options.productName);
   let expanded = options.defaultExpanded ?? false;
   let sortDirection: NetworkActivitySortDirection = "oldest";
   let selectedExchangeId: string | undefined;
   let previousRequestCount: number | undefined;
 
   function paint(): void {
-    const hadOpenRequest = container.querySelector(".na-network-console__summary-details[open]") != null;
+    const hadOpenRequest = container.querySelector(".an-network-console__summary-details[open]") != null;
     let exchanges = log.getExchanges();
     if (options.maxEntries != null && options.maxEntries > 0) {
       exchanges = exchanges.slice(0, options.maxEntries);
@@ -88,6 +92,7 @@ export function createNextAddressNetworkActivityWidget(
       expanded,
       sortDirection,
       selectedExchangeId,
+      productName,
       onToggleExpanded: () => {
         expanded = !expanded;
         paint();
@@ -133,7 +138,7 @@ export function createNextAddressNetworkActivityWidget(
     destroy() {
       unsubscribe();
       container.replaceChildren();
-      container.classList.remove("na-widget-host", "na-network-activity-host");
+      container.classList.remove("an-widget-host", "an-network-activity-host");
     },
   };
 }

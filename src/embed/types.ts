@@ -17,7 +17,7 @@ export type {
 };
 import type { WidgetTheme } from "./themes.js";
 
-/** Connection metadata from your `/api/next-address/connection` route. */
+/** Connection metadata from your `/api/anemone/connection` route. */
 export type TenantConnectionInfo = {
   /** Partner's raw user id (REST/webhooks). */
   externalUserId: string;
@@ -29,7 +29,7 @@ export type TenantConnectionInfo = {
   disconnectUrl: string | null;
   connectSignInUrl: string | null;
   disconnectSignInUrl: string | null;
-  /** Tenant-side metadata: this external user already has a link in NextAddress. */
+  /** Tenant-side metadata: this external user already has a link in Anemone. */
   connected?: boolean;
   /** True when the tenant created the link through email auto-connect. */
   autoConnected?: boolean;
@@ -62,21 +62,25 @@ export type SessionPollState = {
   phase: "sign-in" | "connect" | null;
 };
 
-export type NextAddressIntegrationState = {
+export type AnemoneIntegrationState = {
   connection: WidgetConnectionView;
   sync: ContactSyncDisplayState;
   syncBusy: boolean;
   tenantName: string;
+  /** Resolved product display name used in user-facing integration copy. */
+  productName: string;
   sessionPoll: SessionPollState;
-  /** Set after {@link NextAddressIntegrationHandle.simulateAddressChangeSecurityEvent}. */
+  /** Set after {@link AnemoneIntegrationHandle.simulateAddressChangeSecurityEvent}. */
   addressChangeHold: AddressChangeHoldStatus | null;
 };
 
-export type NextAddressIntegrationOptions = {
+export type AnemoneIntegrationOptions = {
   /** Load connection URLs from your backend. */
   fetchConnection: () => Promise<TenantConnectionInfo>;
   /** Shown in account copy, e.g. "Paws and Tails". */
   tenantName?: string;
+  /** Product display name shown to users. Blank values fall back to "Anemone". */
+  productName?: string;
   /**
    * Optional contact sync retry handler (same as the packaged widget sync strip).
    */
@@ -87,12 +91,12 @@ export type NextAddressIntegrationOptions = {
   /** Refresh Clerk session after returning from primary (ms). Default 2000. */
   visibilityRefreshMs?: number;
   /**
-   * Customize navigation to NextAddress (sign-in, connect, disconnect, settings).
+   * Customize navigation to Anemone (sign-in, connect, disconnect, settings).
    * When omitted, the SDK uses {@link runPrimaryBridge}.
    */
   navigateToPrimary?: (url: string, onComplete?: () => void | Promise<void>) => void;
   /**
-   * Dev/demo hooks — wire to tenant API routes backed by {@link NextAddressClient} simulation methods.
+   * Dev/demo hooks — wire to tenant API routes backed by {@link AnemoneClient} simulation methods.
    */
   simulation?: {
     armScenario?: (
@@ -100,7 +104,7 @@ export type NextAddressIntegrationOptions = {
     ) => Promise<ArmIntegrationSimulationResponse>;
     /** @deprecated Use `armScenario`. */
     simulateSecurityHold?: () => Promise<AddressChangeHoldStatus>;
-    /** @deprecated Use `armScenario` with `sync_failure_merchant` / `sync_failure_nextaddress`. */
+    /** @deprecated Use `armScenario` with `sync_failure_merchant` / `sync_failure_anemone`. */
     simulateFailedAddressUpdate?: (
       source: AddressUpdateFailureSource,
     ) => Promise<SimulateFailedAddressUpdateResponse>;
@@ -108,12 +112,12 @@ export type NextAddressIntegrationOptions = {
   /** @deprecated Use `simulation.simulateSecurityHold`. */
   simulateAddressChangeSecurityEvent?: () => Promise<AddressChangeHoldStatus>;
   /** Called when connection or sync state changes (for custom UI bindings). */
-  onChange?: (state: NextAddressIntegrationState) => void;
+  onChange?: (state: AnemoneIntegrationState) => void;
 };
 
 /** Headless API for custom integration UIs — same actions as the packaged widget. */
-export type NextAddressIntegrationHandle = {
-  getState(): NextAddressIntegrationState;
+export type AnemoneIntegrationHandle = {
+  getState(): AnemoneIntegrationState;
   getConnectionView(): WidgetConnectionView;
   getSyncState(): ContactSyncDisplayState;
   canConnectAccount(): boolean;
@@ -144,9 +148,9 @@ export type NextAddressIntegrationHandle = {
   simulateFailedAddressUpdate(
     source: AddressUpdateFailureSource,
   ): Promise<SimulateFailedAddressUpdateResponse | null>;
-  /** @deprecated Use {@link NextAddressIntegrationHandle.simulateSecurityHold}. */
+  /** @deprecated Use {@link AnemoneIntegrationHandle.simulateSecurityHold}. */
   canSimulateAddressChangeSecurityEvent(): boolean;
-  /** @deprecated Use {@link NextAddressIntegrationHandle.simulateSecurityHold}. */
+  /** @deprecated Use {@link AnemoneIntegrationHandle.simulateSecurityHold}. */
   simulateAddressChangeSecurityEvent(): Promise<AddressChangeHoldStatus | null>;
   setSyncState(state: ContactSyncDisplayState): void;
   reportSyncResult(result: ContactSaveResult): void;
@@ -156,7 +160,7 @@ export type NextAddressIntegrationHandle = {
   destroy(): void;
 };
 
-export type NextAddressWidgetOptions = NextAddressIntegrationOptions & {
+export type AnemoneWidgetOptions = AnemoneIntegrationOptions & {
   /** Mount point element or CSS selector. */
   mount: HTMLElement | string;
   /** Inject bundled stylesheet. Default true. */
@@ -169,4 +173,4 @@ export type NextAddressWidgetOptions = NextAddressIntegrationOptions & {
   theme?: WidgetTheme;
 };
 
-export type NextAddressWidgetHandle = NextAddressIntegrationHandle;
+export type AnemoneWidgetHandle = AnemoneIntegrationHandle;

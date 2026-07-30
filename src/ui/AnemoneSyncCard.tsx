@@ -1,14 +1,17 @@
 "use client";
 
 import type { CSSProperties } from "react";
+import { contactSyncDisplayCopy } from "../branding.js";
 import type { ContactSyncDisplayState } from "../sync.js";
 
-export type NextAddressSyncCardProps = {
+export type AnemoneSyncCardProps = {
   state: ContactSyncDisplayState;
   /** Called when the user clicks Try again after a failed sync. */
   onRetry?: () => void;
   /** Disables Try again while a retry is in flight. */
   retryDisabled?: boolean;
+  /** Product display name. Blank values fall back to "Anemone". */
+  productName?: string;
   className?: string;
   style?: CSSProperties;
 };
@@ -29,15 +32,17 @@ const variants: Record<Exclude<ContactSyncDisplayState["status"], "idle">, CSSPr
   failed: { borderColor: "#fecaca", background: "#fef2f2", color: "#7f1d1d" },
 };
 
-export function NextAddressSyncCard({
+export function AnemoneSyncCard({
   state,
   onRetry,
   retryDisabled = false,
+  productName,
   className,
   style,
-}: NextAddressSyncCardProps) {
+}: AnemoneSyncCardProps) {
   if (state.status === "idle") return null;
 
+  const copy = contactSyncDisplayCopy(productName);
   const cardStyle: CSSProperties = {
     ...baseCard,
     ...variants[state.status],
@@ -47,7 +52,7 @@ export function NextAddressSyncCard({
   if (state.status === "syncing") {
     return (
       <div className={className} style={cardStyle} role="status" aria-live="polite">
-        <p style={{ margin: 0, fontWeight: 600 }}>Syncing with NextAddress…</p>
+        <p style={{ margin: 0, fontWeight: 600 }}>{copy.syncing}</p>
       </div>
     );
   }
@@ -55,7 +60,7 @@ export function NextAddressSyncCard({
   if (state.status === "synced") {
     return (
       <div className={className} style={cardStyle} role="status">
-        <p style={{ margin: 0, fontWeight: 600 }}>Synced with NextAddress</p>
+        <p style={{ margin: 0, fontWeight: 600 }}>{copy.synced}</p>
       </div>
     );
   }
@@ -63,21 +68,19 @@ export function NextAddressSyncCard({
   if (state.status === "queued") {
     return (
       <div className={className} style={cardStyle} role="status">
-        <p style={{ margin: "0 0 8px", fontWeight: 600 }}>Sync pending</p>
-        <p style={{ margin: 0 }}>
-          Your update is queued and will reach NextAddress on the next scheduled sync.
-        </p>
+        <p style={{ margin: "0 0 8px", fontWeight: 600 }}>{copy.queuedTitle}</p>
+        <p style={{ margin: 0 }}>{copy.queuedBody}</p>
       </div>
     );
   }
 
   return (
     <div className={className} style={cardStyle} role="alert" aria-live="assertive">
-      <p style={{ margin: "0 0 8px", fontWeight: 600 }}>Syncing failed</p>
+      <p style={{ margin: "0 0 8px", fontWeight: 600 }}>{copy.failedTitle}</p>
       {state.httpStatus != null ? (
-        <p style={{ margin: 0 }}>NextAddress returned status {state.httpStatus}.</p>
+        <p style={{ margin: 0 }}>{copy.failedWithStatus(state.httpStatus)}</p>
       ) : (
-        <p style={{ margin: 0 }}>We could not sync this contact update with NextAddress.</p>
+        <p style={{ margin: 0 }}>{copy.failedBody}</p>
       )}
       {state.retryable && onRetry ? (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>

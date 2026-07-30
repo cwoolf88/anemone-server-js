@@ -1,26 +1,32 @@
-import { createNextAddressNetworkActivityWidget } from "./network-activity-widget.js";
-import type { NextAddressNetworkActivityWidgetHandle } from "./network-activity-widget.js";
-import { createNextAddressSimulationWidget } from "./simulation-widget.js";
+import { createAnemoneNetworkActivityWidget } from "./network-activity-widget.js";
+import type { AnemoneNetworkActivityWidgetHandle } from "./network-activity-widget.js";
+import { createAnemoneSimulationWidget } from "./simulation-widget.js";
 import type {
-  NextAddressSimulationWidgetHandle,
-  NextAddressSimulationWidgetOptions,
+  AnemoneSimulationWidgetHandle,
+  AnemoneSimulationWidgetOptions,
 } from "./simulation-widget.js";
-import type { NextAddressNetworkActivityWidgetOptions } from "./network-activity-widget.js";
+import type { AnemoneNetworkActivityWidgetOptions } from "./network-activity-widget.js";
 import {
-  isNextAddressDebugModeEnabled,
-  subscribeNextAddressDebugMode,
+  isAnemoneDebugModeEnabled,
+  subscribeAnemoneDebugMode,
 } from "./dev-debug.js";
 import { injectWidgetStyles } from "./widget-styles.js";
+import {
+  productDisplayInitials,
+  resolveProductDisplayName,
+} from "../branding.js";
 
-export type NextAddressDevToolsLauncherOptions = {
+export type AnemoneDevToolsLauncherOptions = {
   simulation?: Omit<
-    NextAddressSimulationWidgetOptions,
+    AnemoneSimulationWidgetOptions,
     "mount" | "injectStyles" | "defaultExpanded"
   >;
   networkActivity?: Omit<
-    NextAddressNetworkActivityWidgetOptions,
+    AnemoneNetworkActivityWidgetOptions,
     "mount" | "injectStyles" | "defaultExpanded"
   >;
+  /** Product display name shown in the launcher. Blank values fall back to "Anemone". */
+  productName?: string;
   /** Fallback left offset when the Next.js dev badge is not found yet. */
   offsetLeft?: number;
   /** Fallback bottom offset when the Next.js dev badge is not found yet. */
@@ -29,7 +35,7 @@ export type NextAddressDevToolsLauncherOptions = {
   nextJsBadgeGap?: number;
 };
 
-export type NextAddressDevToolsLauncherHandle = {
+export type AnemoneDevToolsLauncherHandle = {
   openModal(): void;
   closeModal(): void;
   isModalOpen(): boolean;
@@ -48,10 +54,10 @@ function el<K extends keyof HTMLElementTagNameMap>(
 }
 
 function menuRow(label: string, value: string, onClick?: () => void): HTMLButtonElement {
-  const btn = el("button", "na-dev-tools-launcher__menu-item");
+  const btn = el("button", "an-dev-tools-launcher__menu-item");
   btn.type = "button";
-  btn.appendChild(el("span", "na-dev-tools-launcher__menu-label", label));
-  btn.appendChild(el("span", "na-dev-tools-launcher__menu-value", value));
+  btn.appendChild(el("span", "an-dev-tools-launcher__menu-label", label));
+  btn.appendChild(el("span", "an-dev-tools-launcher__menu-value", value));
   if (onClick) btn.addEventListener("click", onClick);
   return btn;
 }
@@ -75,7 +81,7 @@ type LauncherPositionSyncOptions = {
   gap: number;
 };
 
-/** Keep the NA launcher aligned beside the Next.js dev badge when present. */
+/** Keep the Anemone launcher aligned beside the Next.js dev badge when present. */
 function attachLauncherPositionSync(
   root: HTMLElement,
   options: LauncherPositionSyncOptions,
@@ -140,72 +146,78 @@ function attachLauncherPositionSync(
 }
 
 /**
- * Fixed-position NextAddress dev launcher (Next.js-style) with a popover menu and large tools modal.
+ * Fixed-position Anemone dev launcher (Next.js-style) with a popover menu and large tools modal.
  */
-export function createNextAddressDevToolsLauncher(
-  options: NextAddressDevToolsLauncherOptions = {},
-): NextAddressDevToolsLauncherHandle {
+export function createAnemoneDevToolsLauncher(
+  options: AnemoneDevToolsLauncherOptions = {},
+): AnemoneDevToolsLauncherHandle {
   if (typeof document === "undefined") {
-    throw new Error("createNextAddressDevToolsLauncher requires a browser DOM");
+    throw new Error("createAnemoneDevToolsLauncher requires a browser DOM");
   }
 
   injectWidgetStyles();
 
+  const productName = resolveProductDisplayName(options.productName);
+  const toolsLabel = `${productName} dev tools`;
   const offsetLeft = options.offsetLeft ?? 64;
   const offsetBottom = options.offsetBottom ?? 20;
   const nextJsBadgeGap = options.nextJsBadgeGap ?? 8;
 
   let menuOpen = false;
   let modalOpen = false;
-  let visible = isNextAddressDebugModeEnabled();
-  let simulationWidget: NextAddressSimulationWidgetHandle | null = null;
-  let networkWidget: NextAddressNetworkActivityWidgetHandle | null = null;
+  let visible = isAnemoneDebugModeEnabled();
+  let simulationWidget: AnemoneSimulationWidgetHandle | null = null;
+  let networkWidget: AnemoneNetworkActivityWidgetHandle | null = null;
 
-  const root = el("div", "na-dev-tools-launcher-root");
+  const root = el("div", "an-dev-tools-launcher-root");
   root.hidden = !visible;
   root.style.left = `${offsetLeft}px`;
   root.style.bottom = `${offsetBottom}px`;
 
-  const trigger = el("button", "na-dev-tools-launcher__trigger", "NA");
+  const trigger = el(
+    "button",
+    "an-dev-tools-launcher__trigger",
+    productDisplayInitials(productName),
+  );
   trigger.type = "button";
-  trigger.title = "NextAddress dev tools";
-  trigger.setAttribute("aria-label", "NextAddress dev tools");
+  trigger.title = toolsLabel;
+  trigger.setAttribute("aria-label", toolsLabel);
   trigger.setAttribute("aria-haspopup", "menu");
   trigger.setAttribute("aria-expanded", "false");
 
-  const menu = el("div", "na-dev-tools-launcher__menu");
+  const menu = el("div", "an-dev-tools-launcher__menu");
   menu.hidden = true;
   menu.setAttribute("role", "menu");
 
-  const debugValue = el("span", "na-dev-tools-launcher__menu-value");
-  const debugRow = el("div", "na-dev-tools-launcher__menu-static");
-  debugRow.appendChild(el("span", "na-dev-tools-launcher__menu-label", "Debug mode"));
+  const debugValue = el("span", "an-dev-tools-launcher__menu-value");
+  const debugRow = el("div", "an-dev-tools-launcher__menu-static");
+  debugRow.appendChild(el("span", "an-dev-tools-launcher__menu-label", "Debug mode"));
   debugRow.appendChild(debugValue);
 
-  const modal = el("div", "na-dev-tools-launcher__modal");
+  const modal = el("div", "an-dev-tools-launcher__modal");
   modal.hidden = true;
   modal.setAttribute("role", "presentation");
 
-  const dialog = el("div", "na-dev-tools-launcher__modal-dialog");
+  const dialog = el("div", "an-dev-tools-launcher__modal-dialog");
   dialog.setAttribute("role", "dialog");
   dialog.setAttribute("aria-modal", "true");
-  dialog.setAttribute("aria-label", "NextAddress dev tools");
+  dialog.setAttribute("aria-label", toolsLabel);
 
-  const modalHeader = el("div", "na-dev-tools-launcher__modal-header");
-  modalHeader.appendChild(el("h2", "na-dev-tools-launcher__modal-title", "NextAddress dev tools"));
-  const closeBtn = el("button", "na-dev-tools-launcher__modal-close", "✕");
+  const modalHeader = el("div", "an-dev-tools-launcher__modal-header");
+  modalHeader.appendChild(el("h2", "an-dev-tools-launcher__modal-title", toolsLabel));
+  const closeBtn = el("button", "an-dev-tools-launcher__modal-close", "✕");
   closeBtn.type = "button";
   closeBtn.setAttribute("aria-label", "Close dev tools");
   modalHeader.appendChild(closeBtn);
 
-  const modalBody = el("div", "na-dev-tools-launcher__modal-body na-dev-tools-modal-panel");
-  const simulationMount = el("div", "na-dev-tools-launcher__panel");
-  simulationMount.appendChild(el("h3", "na-dev-tools-launcher__panel-title", "Integration simulations"));
+  const modalBody = el("div", "an-dev-tools-launcher__modal-body an-dev-tools-modal-panel");
+  const simulationMount = el("div", "an-dev-tools-launcher__panel");
+  simulationMount.appendChild(el("h3", "an-dev-tools-launcher__panel-title", "Integration simulations"));
   const simulationHost = el("div");
   simulationMount.appendChild(simulationHost);
 
-  const networkMount = el("div", "na-dev-tools-launcher__panel");
-  networkMount.appendChild(el("h3", "na-dev-tools-launcher__panel-title", "Network activity"));
+  const networkMount = el("div", "an-dev-tools-launcher__panel");
+  networkMount.appendChild(el("h3", "an-dev-tools-launcher__panel-title", "Network activity"));
   const networkHost = el("div");
   networkMount.appendChild(networkHost);
 
@@ -222,21 +234,23 @@ export function createNextAddressDevToolsLauncher(
   });
 
   function syncDebugLabel(): void {
-    debugValue.textContent = isNextAddressDebugModeEnabled() ? "Enabled" : "Off";
+    debugValue.textContent = isAnemoneDebugModeEnabled() ? "Enabled" : "Off";
   }
 
   function mountWidgets(): void {
     if (options.simulation && !simulationWidget) {
-      simulationWidget = createNextAddressSimulationWidget({
+      simulationWidget = createAnemoneSimulationWidget({
         ...options.simulation,
+        productName: options.simulation.productName ?? productName,
         mount: simulationHost,
         injectStyles: false,
         defaultExpanded: true,
       });
     }
     if (options.networkActivity && !networkWidget) {
-      networkWidget = createNextAddressNetworkActivityWidget({
+      networkWidget = createAnemoneNetworkActivityWidget({
         ...options.networkActivity,
+        productName: options.networkActivity.productName ?? productName,
         mount: networkHost,
         injectStyles: false,
         defaultExpanded: true,
@@ -282,7 +296,7 @@ export function createNextAddressDevToolsLauncher(
 
   menu.append(
     openDevToolsRow,
-    el("div", "na-dev-tools-launcher__menu-divider"),
+    el("div", "an-dev-tools-launcher__menu-divider"),
     debugRow,
   );
 
@@ -312,9 +326,9 @@ export function createNextAddressDevToolsLauncher(
   document.addEventListener("click", onDocumentClick);
   document.addEventListener("keydown", onDocumentKeyDown);
 
-  const unsubscribeDebug = subscribeNextAddressDebugMode(() => {
+  const unsubscribeDebug = subscribeAnemoneDebugMode(() => {
     syncDebugLabel();
-    setVisible(isNextAddressDebugModeEnabled());
+    setVisible(isAnemoneDebugModeEnabled());
   });
 
   syncDebugLabel();

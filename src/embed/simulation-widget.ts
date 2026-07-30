@@ -1,23 +1,26 @@
+import { resolveProductDisplayName } from "../branding.js";
 import type { ArmIntegrationSimulationResponse } from "../types.js";
 import { scenarioArmHint } from "../simulation-scenarios.js";
 import { SimulationEventLog } from "./simulation-events.js";
 import { injectWidgetStyles } from "./widget-styles.js";
 import { renderSimulationWidget } from "./simulation-widget-render.js";
-import type { IntegrationSimulationScenario, NextAddressIntegrationHandle } from "./types.js";
+import type { IntegrationSimulationScenario, AnemoneIntegrationHandle } from "./types.js";
 
-export type NextAddressSimulationActions = {
+export type AnemoneSimulationActions = {
   armScenario?: (
     scenario: IntegrationSimulationScenario,
   ) => Promise<ArmIntegrationSimulationResponse>;
 };
 
-export type NextAddressSimulationWidgetOptions = {
+export type AnemoneSimulationWidgetOptions = {
   mount: HTMLElement | string;
   integration?: Pick<
-    NextAddressIntegrationHandle,
+    AnemoneIntegrationHandle,
     "canArmSimulationScenario" | "armSimulationScenario"
   >;
-  actions?: NextAddressSimulationActions;
+  actions?: AnemoneSimulationActions;
+  /** Product display name. Blank values fall back to "Anemone". */
+  productName?: string;
   injectStyles?: boolean;
   /** Shared simulation event timeline — pass to {@link loggedFetch} via `eventLog`. */
   eventLog?: SimulationEventLog;
@@ -26,7 +29,7 @@ export type NextAddressSimulationWidgetOptions = {
   defaultExpanded?: boolean;
 };
 
-export type NextAddressSimulationWidgetHandle = {
+export type AnemoneSimulationWidgetHandle = {
   getEventLog(): SimulationEventLog;
   isExpanded(): boolean;
   setExpanded(expanded: boolean): void;
@@ -39,27 +42,30 @@ function resolveMount(mount: HTMLElement | string): HTMLElement {
   if (typeof mount !== "string") return mount;
   const el = document.querySelector<HTMLElement>(mount);
   if (!el) {
-    throw new Error(`NextAddress simulation widget mount not found: ${mount}`);
+    throw new Error(`Anemone simulation widget mount not found: ${mount}`);
   }
   return el;
 }
 
-function formatResult(result: ArmIntegrationSimulationResponse): string {
+function formatResult(
+  result: ArmIntegrationSimulationResponse,
+  productName?: string,
+): string {
   if (result.status === "applied") {
     return `${result.message} Hold until ${new Date(result.hold.pausedUntil).toLocaleString()}.`;
   }
-  const hint = result.hint || scenarioArmHint(result.scenario);
+  const hint = result.hint || scenarioArmHint(result.scenario, productName);
   return `${result.message} ${hint}`;
 }
 
 /**
  * Optional dev/test panel with buttons for integration failure scenarios.
  */
-export function createNextAddressSimulationWidget(
-  options: NextAddressSimulationWidgetOptions,
-): NextAddressSimulationWidgetHandle {
+export function createAnemoneSimulationWidget(
+  options: AnemoneSimulationWidgetOptions,
+): AnemoneSimulationWidgetHandle {
   if (typeof document === "undefined") {
-    throw new Error("createNextAddressSimulationWidget requires a browser DOM");
+    throw new Error("createAnemoneSimulationWidget requires a browser DOM");
   }
 
   if (options.injectStyles !== false) {
@@ -67,8 +73,9 @@ export function createNextAddressSimulationWidget(
   }
 
   const container = resolveMount(options.mount);
-  container.classList.add("na-widget-host", "na-simulation-host");
+  container.classList.add("an-widget-host", "an-simulation-host");
   const eventLog = options.eventLog ?? new SimulationEventLog();
+  const productName = resolveProductDisplayName(options.productName);
 
   let busy = false;
   let statusMessage: string | null = null;
@@ -91,6 +98,7 @@ export function createNextAddressSimulationWidget(
       expanded,
       events,
       canArmScenario: canArmScenario(),
+      productName,
       onToggleExpanded: () => {
         expanded = !expanded;
         paint();
@@ -116,7 +124,7 @@ export function createNextAddressSimulationWidget(
         return;
       }
       eventLog.recordArmResult(result);
-      statusMessage = formatResult(result);
+      statusMessage = formatResult(result, productName);
     } catch (e) {
       statusError = e instanceof Error ? e.message : "Simulation failed.";
       eventLog.recordFailed(scenario, statusError);
@@ -144,7 +152,7 @@ export function createNextAddressSimulationWidget(
     destroy() {
       unsubscribe();
       container.replaceChildren();
-      container.classList.remove("na-widget-host", "na-simulation-host");
+      container.classList.remove("an-widget-host", "an-simulation-host");
     },
   };
 }
