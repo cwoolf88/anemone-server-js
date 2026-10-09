@@ -12,6 +12,7 @@ import {
 } from "./connection-copy.js";
 import type { SessionPollState, WidgetConnectionView } from "./types.js";
 import { shouldShowSessionPollRefresh } from "./integration.js";
+import { createAnemoneAttributionElement } from "./attribution.js";
 
 export type ConnectionWidgetActions = {
   onConnectAccount: () => void;
@@ -474,6 +475,8 @@ export function renderConnectionSection(
   if (syncState) {
     renderSyncBlockInto(section, syncState, syncActions, product);
   }
+
+  section.appendChild(createAnemoneAttributionElement(info.primaryBaseUrl));
 
   host.replaceChildren(section);
 }

@@ -11,10 +11,8 @@ import {
   subscribeAnemoneDebugMode,
 } from "./dev-debug.js";
 import { injectWidgetStyles } from "./widget-styles.js";
-import {
-  productDisplayInitials,
-  resolveProductDisplayName,
-} from "../branding.js";
+import { appendAnemoneLogo } from "./attribution.js";
+import { resolveProductDisplayName } from "../branding.js";
 
 export type AnemoneDevToolsLauncherOptions = {
   simulation?: Omit<
@@ -174,11 +172,8 @@ export function createAnemoneDevToolsLauncher(
   root.style.left = `${offsetLeft}px`;
   root.style.bottom = `${offsetBottom}px`;
 
-  const trigger = el(
-    "button",
-    "an-dev-tools-launcher__trigger",
-    productDisplayInitials(productName),
-  );
+  const trigger = el("button", "an-dev-tools-launcher__trigger");
+  appendAnemoneLogo(trigger, "an-dev-tools-launcher__logo");
   trigger.type = "button";
   trigger.title = toolsLabel;
   trigger.setAttribute("aria-label", toolsLabel);

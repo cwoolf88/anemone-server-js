@@ -6,7 +6,7 @@ export function resolveProductDisplayName(productName?: string | null): string {
   return productName?.trim() || DEFAULT_PRODUCT_DISPLAY_NAME;
 }
 
-/** Short label for compact branded controls such as the development launcher. */
+/** Two-letter abbreviation of a product display name. */
 export function productDisplayInitials(productName?: string | null): string {
   const resolved = resolveProductDisplayName(productName);
   const words = resolved.split(/\s+/).filter(Boolean);

@@ -24,6 +24,16 @@ export {
   getSettingsUrl,
   shouldShowSessionPollRefresh,
 } from "./integration.js";
+export {
+  ANEMONE_ATTRIBUTION_NAME,
+  ANEMONE_LOGO_PATH,
+  ANEMONE_PRIVACY_PATH,
+  ANEMONE_TERMS_PATH,
+  DEFAULT_ANEMONE_PRIMARY_BASE_URL,
+  renderAnemoneAttribution,
+  resolveAnemoneAttribution,
+  type AnemoneAttribution,
+} from "./attribution.js";
 export { createAnemoneWidget } from "./widget.js";
 export { renderSyncBlock } from "./widget-render.js";
 export type { SyncWidgetActions } from "./widget-render.js";
