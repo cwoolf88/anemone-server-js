@@ -6,6 +6,7 @@ import type { ContactSyncDisplayState } from "../sync.js";
 import {
   connectionStatusTooltip,
   connectionSubtitle,
+  connectionTitle,
   disconnectButtonLabel,
   sessionPollRefreshLabel,
   settingsButtonLabel,
@@ -361,8 +362,9 @@ export function renderConnectionSection(
   productName?: string,
 ): void {
   const product = resolveProductDisplayName(productName);
+  const title = connectionTitle();
   const section = el("section", "an-widget an-widget__connection");
-  section.setAttribute("aria-label", product);
+  section.setAttribute("aria-label", title);
 
   if (view.loading) {
     section.setAttribute("aria-busy", "true");
@@ -387,7 +389,7 @@ export function renderConnectionSection(
   const header = el("div", "an-widget__header");
   const top = el("div", "an-widget__header-top");
   const copy = el("div", "an-widget__copy");
-  copy.appendChild(el("h2", "an-widget__title", product));
+  copy.appendChild(el("h2", "an-widget__title", title));
   copy.appendChild(
     el("p", "an-widget__subtitle", connectionSubtitle(view, tenantName, product)),
   );

@@ -4,6 +4,11 @@ import type { WidgetConnectionView } from "./types.js";
 /** Default primary settings path when signed in without a per-merchant link. */
 export const DEFAULT_PRIMARY_SETTINGS_PATH = "/addresses";
 
+/** Widget heading: describes the connect feature, not the integrating site. */
+export function connectionTitle(): string {
+  return "Address profile";
+}
+
 export function connectionSubtitle(
   view: WidgetConnectionView,
   tenantName: string,

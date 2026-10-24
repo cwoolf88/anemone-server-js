@@ -10,6 +10,7 @@ export { WIDGET_CSS, injectWidgetStyles } from "./widget-styles.js";
 export {
   connectionStatusTooltip,
   connectionSubtitle,
+  connectionTitle,
   DEFAULT_PRIMARY_SETTINGS_PATH,
   disconnectButtonLabel,
   resolvePrimarySettingsUrl,

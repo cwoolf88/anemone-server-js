@@ -1,7 +1,15 @@
-/** Default product display name used when no integration branding is supplied. */
+/** Brand mark for attribution, titles, and standalone labels. */
+export const DEFAULT_DISPLAY_NAME = "AnemoneOS";
+
+/** Short name for prose and sentences (never includes "OS"). */
 export const DEFAULT_PRODUCT_DISPLAY_NAME = "Anemone";
 
-/** Normalize an optional product display name and fall back to the SDK default. */
+/** Normalize an optional brand mark and fall back to AnemoneOS. */
+export function resolveDisplayName(displayName?: string | null): string {
+  return displayName?.trim() || DEFAULT_DISPLAY_NAME;
+}
+
+/** Normalize an optional in-sentence product name and fall back to Anemone. */
 export function resolveProductDisplayName(productName?: string | null): string {
   return productName?.trim() || DEFAULT_PRODUCT_DISPLAY_NAME;
 }

@@ -1,5 +1,5 @@
 /** Platform name shown in the attribution row, independent of `productName`. */
-export const ANEMONE_ATTRIBUTION_NAME = "Anemone";
+export const ANEMONE_ATTRIBUTION_NAME = "AnemoneOS";
 
 /** Used for attribution links when connection info has no `primaryBaseUrl` (e.g. mock mode). */
 export const DEFAULT_ANEMONE_PRIMARY_BASE_URL = "https://app.anemoneos.com";

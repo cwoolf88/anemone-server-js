@@ -103,9 +103,11 @@ export {
 } from "./simulation-scenarios.js";
 
 export {
+  DEFAULT_DISPLAY_NAME,
   DEFAULT_PRODUCT_DISPLAY_NAME,
   contactSyncDisplayCopy,
   productDisplayInitials,
+  resolveDisplayName,
   resolveProductDisplayName,
   type ContactSyncDisplayCopy,
 } from "./branding.js";

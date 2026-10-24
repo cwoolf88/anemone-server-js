@@ -12,7 +12,10 @@ import {
 } from "./dev-debug.js";
 import { injectWidgetStyles } from "./widget-styles.js";
 import { appendAnemoneLogo } from "./attribution.js";
-import { resolveProductDisplayName } from "../branding.js";
+import {
+  DEFAULT_DISPLAY_NAME,
+  resolveProductDisplayName,
+} from "../branding.js";
 
 export type AnemoneDevToolsLauncherOptions = {
   simulation?: Omit<
@@ -23,7 +26,7 @@ export type AnemoneDevToolsLauncherOptions = {
     AnemoneNetworkActivityWidgetOptions,
     "mount" | "injectStyles" | "defaultExpanded"
   >;
-  /** Product display name shown in the launcher. Blank values fall back to "Anemone". */
+  /** In-sentence product name for nested tools. Blank values fall back to "Anemone". */
   productName?: string;
   /** Fallback left offset when the Next.js dev badge is not found yet. */
   offsetLeft?: number;
@@ -156,7 +159,7 @@ export function createAnemoneDevToolsLauncher(
   injectWidgetStyles();
 
   const productName = resolveProductDisplayName(options.productName);
-  const toolsLabel = `${productName} dev tools`;
+  const toolsLabel = `${DEFAULT_DISPLAY_NAME} dev tools`;
   const offsetLeft = options.offsetLeft ?? 64;
   const offsetBottom = options.offsetBottom ?? 20;
   const nextJsBadgeGap = options.nextJsBadgeGap ?? 8;

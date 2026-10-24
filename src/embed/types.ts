@@ -79,7 +79,7 @@ export type AnemoneIntegrationOptions = {
   fetchConnection: () => Promise<TenantConnectionInfo>;
   /** Shown in account copy, e.g. "Paws and Tails". */
   tenantName?: string;
-  /** Product display name shown to users. Blank values fall back to "Anemone". */
+  /** In-sentence product name (e.g. "Anemone"). Standalone marks use AnemoneOS. Blank falls back to "Anemone". */
   productName?: string;
   /**
    * Optional contact sync retry handler (same as the packaged widget sync strip).
